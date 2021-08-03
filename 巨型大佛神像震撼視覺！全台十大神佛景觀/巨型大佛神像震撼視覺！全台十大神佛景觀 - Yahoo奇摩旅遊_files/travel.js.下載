@@ -1,0 +1,1557 @@
+// jshint strict: false, evil:true, undef: false, unused: false
+var StopLoadMore = false;
+var Loaduuid = false;
+var Loadsearch = false;
+var __ListStreaming = false;
+var __SearchinRight = false;
+var LoadPage = 1;
+var Mobile = false;
+var $SearchFrame = [];
+var __isSearchFrame = false;
+var $CaleFrame = [];
+var __SitePage = '';
+var DefaultSearch = 't3';
+var SearchPlace = {'t2': 'abroad', 't3': 'domestic', 't4': 'colafit'};
+DARLA_CONFIG = {
+	lang: "zh-Hant-TW",
+	positions: {
+		"MAST":{
+			id:"MAST",
+			w:970,
+			z:10,
+			autoFetch:false,
+			fr:"expIfr_exp",
+			supports:{
+				"exp-ovr": 1,
+				"exp-push": 1,
+				"resize-to": 1,
+				"read-cookie": 1,
+				"write-cookie": 1,
+				"cmsg": 1
+			},
+			enable:true,
+			staticLayout:false,
+			fdb:false,
+			closeBtn:{
+				"mode":2,
+				"useShow":1,
+				"adc":0
+			},
+			metaSize:true,
+			clean:"BOXMAST",
+			dest:"MASTAD",
+			fallback:null,
+			failed:false
+		},
+		"DEFAULT": {		
+			supports: {
+				"bg": 0,
+				"exp-ovr": 1,
+				"exp-push": 0,
+				"lyr": 0,
+				"cmsg": 1
+			}
+		},
+        "ref": location.href
+	}
+};
+var LastPos = 0;
+var StopLoadMore = false;
+var DataLoading = false;
+var LastPostTop = 0;
+function PlistaInWatch() {
+	$('#PostWatch .item_block:eq(14)').after('<div data-widget="plista_widget_infeed_travel_14" class="plista_ad"></div>');
+	$('#PostWatch .item_block:last').after('<div data-widget="plista_widget_infeed_travel_20" class="plista_ad"></div>');
+	(function(c){var g,s='script',w=window,n=c.name||'PLISTA';if(!w[n]){w[n]=c;g=w.document.getElementsByTagName(s)[0];s=w.document.createElement(s);s.async=true;s.type='text/javascript';s.src=(w.location.protocol==='https:'?'https:':'http:')+'//static'+(c.origin?'-'+c.origin:'')+'.plista.com/async'+(c.name?'/'+c.name:'')+'.js';g.parentNode.insertBefore(s,g);}
+	}({
+		"publickey": "8d4a86b174f18ee150ce3791",
+		"origin": "tw"
+	}));
+}
+function intval($v) {
+	$v = parseInt($v, 10);
+	return (isNaN($v)?0:$v);
+}
+function SQEsc(v) {
+	if (typeof(v) !== 'string') {
+		return '';	
+	}
+	return v.replace(/'/g, '&#39;');
+}
+function addCommas(nStr) {
+	nStr += '';
+	x = nStr.split('.');
+	x1 = x[0];
+	x2 = x.length > 1 ? '.' + x[1] : '';
+	var rgx = /(\d+)(\d{3})/;
+	while (rgx.test(x1)) {
+	  x1 = x1.replace(rgx, '$1' + ',' + '$2');
+	}
+	return x1 + x2;
+}
+function CheckIG() {
+	if ($('.instagram-media').length > 0) {
+		$.getScript('//platform.instagram.com/en_US/embeds.js');
+	}
+}
+function mGoBack() {
+    if (history.length > 0) {
+        history.go(-1);
+    } else {
+        document.location.href='https://tw.mobi.yahoo.com/travel/';
+    }
+}
+function ScrollToTop() { $(window).scrollTop(0); }
+function detectIE() {
+  var ua = window.navigator.userAgent;
+  var msie = ua.indexOf('MSIE ');
+  if (msie > 0) {
+    // IE 10 or older => return version number
+    return parseInt(ua.substring(msie + 5, ua.indexOf('.', msie)), 10);
+  }
+
+  var trident = ua.indexOf('Trident/');
+  if (trident > 0) {
+    // IE 11 => return version number
+    var rv = ua.indexOf('rv:');
+    return parseInt(ua.substring(rv + 3, ua.indexOf('.', rv)), 10);
+  }
+
+  var edge = ua.indexOf('Edge/');
+  if (edge > 0) {
+    // Edge (IE 12+) => return version number
+    return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
+  }
+
+  // other browser
+  return false;
+}
+function SiteSearch() {
+	var KW = $('#KeyWords').val();
+	ga('send','event','header','click','搜尋內容_' + SQEsc(KW));
+	$('#SiteSearchForm input[name="q"]').val(KW);
+    document.location.href="/search/" + encodeURIComponent(KW);
+}
+function MSiteSearch() {
+	var KW = $('#KeyWords').val();
+	ga('send','event','文章搜尋_m','click',KW);
+    document.location.href="/search/" + encodeURIComponent(KW);
+    return false;
+}
+function WebSearch() {
+	var KW = $('#KeyWords').val();
+	ga('send','event','header','click','搜尋網頁_' + KW);
+	$('#WebSearchForm input[name="p"]').val(KW);
+	$('#WebSearchForm').submit();
+}
+$YT = {
+	URL_HASH: {},
+    EXPO: false,
+	StartPage: function() {
+        if (typeof(EXPOData) !== 'undefined') {
+            $YT.EXPO = true;
+        }
+		$.post('/block/CCPA.php', {}, function(DH) {
+			if (DH != '') { $('#CCPAPre').after(DH); }
+		});
+        $('#ytm_nav .item').each(function() {
+            var RI = $(this);
+            if ($YT.EXPO) {
+                if (RI.find('a:eq(0)').text() === '找行程') {
+                    var subhtml = '<div class="subbox"><div class="subinbox"><div class="sub_block"><ul class="sub_list"><li class="sub_item"><a href="/tour/" class="page" onclick="ga(\'send\',\'event\',\'sub-menu\',\'click\',\'找行程\');">找行程</a></li>';
+                    RI.find('.sub_item').each(function() {
+                        subhtml += '<li class="sub_item">' + $(this).html() + '</li>';
+                    });
+                    subhtml += '</ul></div></div></div>';
+                    subhtml = '<a href="/travelexpo/" class="page" onclick="ga(\'send\',\'event\',\'navigation\',\'click\',\'' + EXPOData.TSTag + '\');" data-rapid_p="61"><i class="menuicon tag"></i>' + EXPOData.TSTag + '</a><i class="menuicon more" onclick="$(this).closest(\'.item\').toggleClass(\'Activity\')"></i>' + subhtml;
+                    RI.addClass('travelexpo hassub').html(subhtml);
+                }
+            }
+            var w = RI.width() - 1;
+            RI.find('.sub_block').css({'min-width': w});
+        });
+        if ($YT.EXPO) {
+            $('#PTravelNow').after(EXPOData.TSPromoHTML);
+            $('#TREXPOBanner').attr('onclick', 'ga(\'send\',\'event\',\'' + EXPOData.TSTag + '_' + GATitle + '\',\'click\',\'' + EXPOData.TSTag + 'KV\');');
+        }
+        setTimeout(function(){
+            $YT.Loaded();
+            $('#page-body').css('opacity', 1);
+        }, 100);
+
+		$('#PTravelNowFrame').iFrameResize({'resizedCallback': function(r) {
+            $('#PTravelNowFrame').height(intval(r.height));
+		}});
+		$('#mapFrame').iFrameResize({'resizedCallback': function(r) {
+            $('#mapFrame').height(intval(r.height));
+		}});
+		$YT.SetZ();
+		$YT.MakeAD();
+		$YT.MakeComScore();
+        $YT.MakeDotQ();
+        $('#SlateBox .slate_nav li').mouseenter(function(){
+            var ibx = $(this).data('slateid');
+            $YT.SlateTo(ibx);
+        });
+        $YT.SlateStartAuto();
+        $YT.MakeSearch();
+        $(".dotdotdot").truncate({multiline: true});
+        $YT.LoadRightBox();
+        if (__SitePage === 'Post') {
+            $YT.LoadPostBox();
+            $YT.PageElementResize();
+            $YT.PostGetFBComments();
+            $YT.MakeEC();
+            $YT.MakeECCola();
+        }
+	},
+    MakeEXPOShow: function() {
+        if (!$YT.EXPO) { return false; }
+        if ($('#PostEC').length === 0) {
+            return true;
+        }
+        var PostECExtra = [];
+        PostECExtra = EXPOData.TSChannelShow.split(',');
+        for (var $d = 0; $d < PostECExtra.length; $d++) {
+            var $ecdata = PostECExtra[$d].split('|');
+            var ThemeID = intval($ecdata[0]);
+            var ThemeName = $ecdata[1];
+            var SQEscTName = SQEsc(ThemeName);
+            $.ajax({
+                url: 'https://travel.tw.campaign.yahoo.net/tour/relatived?campaign_type=' + ThemeID + '&callback=?',
+                type: "GET",
+                dataType: "jsonp",
+                'd': $d,
+                'ThemeID': ThemeID,
+                'ThemeName': ThemeName,
+                'SQEscTName': SQEscTName,
+                success: function(JSON, textStatus, jqXHR) {
+                    var DH = '';
+                    if (!$.isEmptyObject(JSON) && JSON[0].list.length > 0) {
+                        var ExpoData = {'ThemeID': this.ThemeID, 'ThemeName': this.ThemeName, 'd': this.d, 'SQEscTName': this.SQEscTName};
+                        $('#PostEC .ECList').append('<li class="t' + ExpoData.ThemeID + '" data-block="' + ExpoData.ThemeID + '" style="background-image:url(https://travel.tw.campaign.yahoo.net/travelexpo/img/ICON/new_t' + ExpoData.ThemeID + '.png)" onclick="$YT.SwitchEC($(this));ga(\'send\',\'event\',\'相關行程住宿_文章頁_' + ExpoData.SQEscTName + '\',\'click\',\'' + ExpoData.SQEscTName + '\');"><span>' + ExpoData.ThemeName + '</span></li>');
+                        if (this.d === 0) {
+                            $('#PostEC .ECList .t' + ExpoData.ThemeID).insertAfter($('#PostEC .ECList .t1'));
+                        }
+                        DH = '<div id="ecbox' + ExpoData.ThemeID + '" class="ecbox">';
+                        $.each(JSON[0].list, function(k, v) {
+                            DH += '<a class="item_block" target="_blank" rel="noopener noreferrer" href="' + v.link_url + '" onclick="ga(\'send\',\'event\',\'相關行程住宿_%文章頁%_' + this.SQEscTName + '行程內容\',\'click\',\'' + SQEsc(v.link_url) + '\');"><div class="item_img" style="background-image: url(' + v.img_url + ')"><div class="item_vend">' + v.vendor + '</div></div><div class="item_topic">' + v.title + '</div><div class="item_price">NT ' + addCommas(v.price) + '起</div></a>';
+                        });
+                        DH += '</div>';
+                        
+                        $('#PostEC .mask .ScrollBox').append(DH);
+                    }
+                }
+            });				
+        }
+    },
+	MakeComScore: function() {
+        var comscoreData = {
+            c1: "2",
+            c2: "7241469",
+            c5: __SpaceID,
+            c7: escape(decodeURI(window.location.href))
+        };
+        window.__adlib.fireComscoreBeacon(comscoreData);
+	},
+    MakeDotQ: function() {
+		var tags = '';
+		if (GATitle === '文章頁') {
+            if (Array.isArray(Tags)) {
+                tags = Tags.join();
+            } else {
+                tags = '';
+            }
+		} else {
+			tags = GATitle;
+		}
+        window.dotq = window.dotq||[];
+		window.dotq.push({
+			'projectId':'10000',
+			'properties':{
+				'pixelId':'428726',
+				'qstrings':{
+					'country':'tw', 
+					'property':'travel',
+                    'spaceid':__SpaceID,
+					'tag': tags
+				}
+			}
+		});
+		$.getScript('https://s.yimg.com/wi/ytc.js', function() {
+			YAHOO.ywa.I13N.fireBeacon(window.dotq);
+			window.dotq = [];
+			window.dotq.push=function(p) { YAHOO.ywa.I13N.fireBeacon([p]); };
+		});  
+    },
+	ZConf: {},
+	SetZ: function() {
+		if (__SpaceID === '') {
+			return false;	
+		}
+		if ($.isEmptyObject($YT.ZConf)) {
+            if (typeof(RapidPT) === 'undefined') {
+                RapidPT = 4;
+            }
+			$YT.ZConf = {spaceid:__SpaceID, pageview_on_init:true,client_only:1,keys:{pt:RapidPT}}; 
+		} else {
+			$YT.ZConf.apv = false;
+		}
+		new YAHOO.i13n.Rapid($YT.ZConf).init();
+	},
+	MakeAD: function() {
+		var ADWord = '';
+		if (__SitePage === 'Index') {
+            ADWord = 'LREC{dest:LRECAD;asz:300x250},LREC3{dest:LREC3AD;asz:300x250},MAST{dest:MASTAD;asz:970x250}';
+		} else {
+            ADWord = 'LREC{dest:LRECAD;asz:300x250},LREC3{dest:LREC3AD;asz:300x250},LDRB{dest:LDRBAD;asz:728x90;}';
+		}
+		$.getScript('https://fc.yahoo.com/sdarla/php/client.php?l=' + ADWord + '&f=' + __SpaceID + '&npv=1&ref=' + encodeURIComponent(location.href), function(){
+			$YT.MakeNativeAD();
+		});
+	},
+	MakeNativeAD: function() {
+		if (__SitePage === 'Index') {
+			return false;
+		}
+		var w_yahoo = (top === self) ? window : window.top, d_yahoo = w_yahoo.document;
+		w_yahoo.native = w_yahoo.native || [];
+		if (__SitePage === 'Post') {
+            //w_yahoo.adUnitCode.push('57afb621-6e14-4e68-aa0f-53b95168761d'); //article right rail text
+            //w_yahoo.adUnitCode.push('f022ee29-d0b9-4ede-8f26-9b6b53ffd8b2'); //article right rail image
+            //w_yahoo.adUnitCode.push('c4400162-ad8e-48e9-a14a-771236c77979'); //article stream image
+            w_yahoo.native.push('3fdea7a3-627b-4977-88ab-d5b4ccd5aa61'); //2018_article right rail image 內容頁右欄精選模組  
+            w_yahoo.native.push('33eccf88-a84a-47a2-81f6-5913a0fff38b'); //2018_article stream image 內容頁下方你可能會想看   
+            w_yahoo.apiKey = "Z8N3HZD8489P7QJ48GT5";
+		} else {
+			return false;
+		}
+		if (w_yahoo.native.length > 0) {
+			$.getScript("https://s.yimg.com/dy/ads/native.js");
+		}
+	},
+	BKMakeNativeAD: function() {
+		if (__SitePage === 'Index') {
+			return false;
+		}
+		var w_yahoo = (top === self) ? window : window.top, d_yahoo = w_yahoo.document;
+		w_yahoo.adUnitCode = w_yahoo.adUnitCode || [];
+		if (__SitePage === 'Post') {
+            //w_yahoo.adUnitCode.push('57afb621-6e14-4e68-aa0f-53b95168761d'); //article right rail text
+            //w_yahoo.adUnitCode.push('f022ee29-d0b9-4ede-8f26-9b6b53ffd8b2'); //article right rail image
+            //w_yahoo.adUnitCode.push('c4400162-ad8e-48e9-a14a-771236c77979'); //article stream image
+            w_yahoo.adUnitCode.push('3fdea7a3-627b-4977-88ab-d5b4ccd5aa61'); //2018_article right rail image 內容頁右欄精選模組  
+            w_yahoo.adUnitCode.push('33eccf88-a84a-47a2-81f6-5913a0fff38b'); //2018_article stream image 內容頁下方你可能會想看   
+            w_yahoo.apiKey = "Z8N3HZD8489P7QJ48GT5";
+		} else {
+			return false;
+		}
+		if (w_yahoo.adUnitCode.length > 0) {
+			$.getScript("https://s.yimg.com/av/yap/ga/yap.js");
+		}
+	},
+    LastScrollPos: 0,
+	ScrollEvent: function() {
+		var NowScroll = $(window).scrollTop();
+        if (NowScroll > 0) {
+            $('#page-head').css({'top': -26});
+        } else {
+            $('#page-head').css({'top': 0});
+        }
+        var PostTop = $('#posts').offset().top + 20;
+        PostTop -= $(window).height();
+		var RightHeight = $('#RightCol').outerHeight();
+		var LeftHeight = $('#LeftCol').outerHeight();
+        var StartMoveTop = PostTop + 30 + RightHeight; //10 + 20
+        /* Article 修改右欄順序
+		if (!__ListStreaming) {
+            var FixPTravelNow = $('#PTravelNow').offset().top - 132 - intval($('#RightCol').css('margin-top'));
+            StartMoveTop = Math.max(StartMoveTop, FixPTravelNow);
+        }
+        */
+        if (LeftHeight > RightHeight) {
+            StartMoveTop = Math.max(0, StartMoveTop);
+            var StopMoveTop = PostTop + 10 + LeftHeight;
+            if (NowScroll >= StopMoveTop) {
+                $('#RightCol').css({'margin-top': StopMoveTop - StartMoveTop});
+            } else if (NowScroll >= StartMoveTop) {
+				$('#RightCol').css({'margin-top': NowScroll - StartMoveTop});
+			} else {
+				$('#RightCol').css({'margin-top': '0px'});
+			}
+        } else {
+            $('#RightCol').css({'margin-top': '0px'});
+        }
+        if (__SitePage === 'Post') {
+            var SNSStart = $('#LeftCol').offset().top - 132;
+            var maxTop = $('#LeftCol article').height() - $('#PostSNS').height();
+            if (NowScroll > SNSStart) {
+                $('#PostSNS').css({'top': Math.min((NowScroll - SNSStart), maxTop), 'margin-top': 20});
+            } else {
+                $('#PostSNS').css({'top': 0, 'margin-top': 0});
+            }
+        }
+        if (NowScroll > $YT.LastScrollPos) {
+            if ($('#footer').is(":visible")) {
+                $('#footer').fadeOut('fast');
+            }
+        } else if (NowScroll < $YT.LastScrollPos) {
+            if (!$('#footer').is(":visible")) {
+                $('#footer').fadeIn('fast');
+            }
+        }
+		if (NowScroll === 0) {
+			$('#TopBtn').hide();
+			$('#ScrollDown').show();
+		} else {
+			$('#TopBtn').show();
+			$('#ScrollDown').hide();
+		}
+        if (__ListStreaming && $('#IDXNews .item_block').length > 0) {
+            var LastItemPos = $('#IDXNews .item_block').last().offset().top - $(window).height();
+            if (Mobile) {
+                LastItemPos-=300;
+            }
+            if (NowScroll > LastItemPos) {
+                $YT.LoadMoreList();
+             }
+        }
+		$YT.LastScrollPos = NowScroll;
+	},
+    PageLoading: true,
+    Loading: function() {
+        if ($YT.PageLoading) {
+            return false;
+        }
+        $YT.PageLoading = true;
+        $('body').addClass('loading');
+    },
+    Loaded: function() {
+        if (!$YT.PageLoading) {
+            return false;
+        }
+        $('body').removeClass('loading');
+        $YT.PageLoading = false;
+    },
+	LoadMoreList: function() {
+        if (StopLoadMore) {
+            return false;
+        }
+        if ($YT.PageLoading) {
+            return false;
+        }
+        $YT.Loading();
+        LoadPage++;
+        var FD = {'P': LoadPage, 'T': Tag};
+        FD.type = 'tag';
+        if (Loaduuid) {
+            FD.type = 'uuid';
+        } else if (Loadsearch) {
+            FD.type = 'search';
+        }
+        FD.GATitle = GATitle;
+        $.post('/ajax/LoadMore.php', FD, function($DH) {
+            $('#IDXNews .mask').append($DH);
+            $YT.Loaded();
+        });
+	},
+    LoadRightBox: function() {
+        $('#PCALE').load('/ajax/Cal.php?GATitle=' + GATitle);
+    },
+    LoadPostBox: function() {
+        //PTagLike
+        if (Array.isArray(Tags) && Tags.length > 0) {
+            Tags = $.shuffle(Tags);
+            $.post('/ajax/PostTagLike.php', {tag: Tags[0], uuid: PUUID}, function(DH) {
+                if (DH === '') {
+                    $('#PTagLike').remove();
+                } else {
+                    $('#PTagLike').html(DH);
+                }
+            });
+            if (PATag !== '' && PATag !== null) {
+                $.post('/ajax/PostTagMore.php', {tag: PATag}, function(DH) {
+                    if (DH === '') {
+                        $('#PostMoreTagBlock').remove();
+                    } else {
+                        $('#PostMoreTagBlock .moretag_content').html(DH);
+                    }
+                });
+            }
+        } else {
+            $('#PTagLike').remove();
+        }
+        //PostWatch
+        if ($('#PostWatch').length > 0) {
+            $('#PostWatch').load('/ajax/PostWatch.php', function(){
+                PlistaInWatch();
+            });
+        }
+    },
+	POPPos: function(w, h) {
+		var MultiScreenLeft = window.screenLeft !== undefined ? window.screenLeft : screen.left;
+		var MultiScreenTop = window.screenTop !== undefined ? window.screenTop : screen.top;
+		var width = window.innerWidth ? window.innerWidth : document.documentElement.clientWidth ? document.documentElement.clientWidth : screen.width;
+		var height = window.innerHeight ? window.innerHeight : document.documentElement.clientHeight ? document.documentElement.clientHeight : screen.height;
+		Pos = {'w': w, 'h': h, 'left': ((width / 2) - (w / 2)) + MultiScreenLeft, 'top': ((height / 2) - (h / 2)) + MultiScreenTop};
+		return Pos;
+	},
+	SNSTumblr: function() {
+		var WH = 700;
+		var WW = 540;
+		var Url = 'https://www.tumblr.com/widgets/share/tool?posttype=link&url=' + encodeURIComponent(ShareURL);
+		var Pos = $YT.POPPos(WW, WH);
+		window.open(Url, 'TWYahooStyleTumblrShare', config='toolbar=no,menubar=no,status=no,height=' + Pos.h + ',width=' + Pos.w + ',top=' + Pos.top + ',left=' + Pos.left);
+	},
+	SNSFB: function() {
+		var WH = 612;
+		var WW = 555;
+		var Url = 'https://www.facebook.com/dialog/feed?app_id=' + FBappid + '&display=popup&show_error=yes&link=' + encodeURIComponent(ShareURL);
+		var Pos = $YT.POPPos(WW, WH);
+		window.open(Url, 'TWYahooStyleFBShare', config='toolbar=no,menubar=no,status=no,height=' + Pos.h + ',width=' + Pos.w + ',top=' + Pos.top + ',left=' + Pos.left);
+	},
+	URL_PATH: '',
+	PageName: '',
+    MakeSearch: function() {
+        $YT.BuildColaCache();
+		var GAtopic = '';
+        var GAname = '國外行程';
+		if (__isSearchFrame) {
+			GAtopic = '行程搜尋_' + $YT.PageName;
+		} else if ($YT.URL_PATH === '/') {
+			GAtopic = '行程搜尋_' + $YT.PageName;
+		} else if ($.inArray($YT.URL_PATH, $CaleFrame) > -1) {
+			GAtopic = '右欄找行程_' + $YT.PageName;
+		} else {
+			GAtopic = '右欄找行程_' + $YT.PageName;
+		}
+        var DH = '';
+        var HotKeys = $TSearchBlockCache.Hot[SearchPlace[DefaultSearch]];
+        if ($.isArray(HotKeys)) {
+            $.each(HotKeys, function(k, v) {
+                if (DH !== '') { DH += ' │ '; }
+                DH += '<a class="aditem" href="' + v.url + '" onclick="ga(\'send\',\'event\',\'' + GAtopic　+ '_' +　GAname +'\',\'click\',\'' + SQEsc(v.text) + 'Keyword\');">' + v.text + '</a>';
+            });
+        }
+        $('#SearchBox .ADText').html(DH);
+        $YT.MakeSearchExtra();
+        $('#SearchStart, #SearchEnd').datepicker(
+			{beforeShow:function(ele, obj) {
+				$('#ui-datepicker-div').removeClass('SearchStart SearchEnd').addClass($(ele).attr('id'));
+			}}
+		);
+		$('#SearchStart').change($YT.SearchStartChange);
+
+		$('#SearchPlace').on('keydown', function(e) {
+			if (e.keyCode === 13) {
+				$YT.SendSRPSearch();
+			}
+		}).autocomplete({
+			source: function( request, response ) {
+				$.ajax({
+					url: "https://travel.tw.campaign.yahoo.net/tour/abroad/autocomplete",
+					dataType: "jsonp",
+					data: {
+						keyword: request.term
+					},
+					success: function(data) {
+						response($.map(data, function(item) {
+                            return {
+                              label: item.name,
+                              value: item.name
+                            };
+                          }));
+					}
+				});
+			}
+		});
+    },
+    SearchIN: 'D',
+	SwitchSearchType: function(obj) {
+		if (obj.hasClass('Activity')) {
+			return false;
+		}
+		var GAtopic = '';
+		if (__isSearchFrame) {
+			GATopic = '行程搜尋_' + $YT.PageName;
+		} else if ($YT.URL_PATH === '/') {
+			GAtopic = '行程搜尋_' + $YT.PageName;
+		} else if ($.inArray($YT.URL_PATH, $CaleFrame) > -1) {
+			GAtopic = '右欄找行程_' + $YT.PageName;
+		} else {
+			GAtopic = '右欄找行程_' + $YT.PageName;
+		}
+		var TypeID = 't1';
+		var GAname = '找住宿Tab';
+		if (obj.hasClass('t2')) { 
+            TypeID = 't2'; GAname = '國外行程Tab';
+            $YT.SearchIN = 'O';
+        } else if (obj.hasClass('t3')) { 
+            TypeID = 't3'; GAname = '國內行程Tab'; 
+            $YT.SearchIN = 'D';
+        } else if (obj.hasClass('t4')) { 
+            TypeID = 't4'; GAname = '可樂自由行Tab'; 
+            $YT.SearchIN = 'C';
+        }
+		ga('send','event',GAtopic,'click', GAname);
+		$('#SearchBox .SearchList li.Activity').removeClass('Activity');
+		$('#SearchBox .SearchList li.' + TypeID).addClass('Activity');
+        $('.QSBox').hide();
+		$YT.MakeSearchExtra();
+	},
+	SearchStartChange: function() {
+		if ($('#SearchStart').val() !== '') {
+			if ($('#SearchEnd').prop('disabled')) {
+				$('#SearchEnd').prop('disabled', false);
+			}
+			$("#SearchEnd").datepicker("option", "minDate", new Date($('#SearchStart').val()));
+		} else {
+			$('#SearchEnd').val('').prop('disabled', true);
+		}
+	},
+	SearchMoneyCheck: function() {
+		var CL = intval($('#SearchCostLow').val());
+		var CH = intval($('#SearchCostHigh').val());
+		if (CL > CH) {
+			$('#SearchCostHigh').val(CL);
+		}
+		$('#SearchCostHigh').attr('min', CL);
+	},
+	SearchLoaded: false,
+	MakeSearchExtra: function() {
+		var GAtopic = '';
+		if (__isSearchFrame) {
+			GAtopic = '行程搜尋_' + $YT.PageName;
+		} else if ($YT.URL_PATH === '/') {
+			GAtopic = '行程搜尋_' + $YT.PageName;
+		} else if ($.inArray($YT.URL_PATH, $CaleFrame) > -1) {
+			GAtopic = '右欄找行程_' + $YT.PageName;
+		} else {
+			GAtopic = '右欄找行程_' + $YT.PageName;
+		}
+		var GAname = '找住宿';
+		var TypeID = 't1';
+		if ($('#SearchBox .SearchList li.Activity').length > 0) {
+			var TA = $('#SearchBox .SearchList li.Activity');
+			if (TA.hasClass('t2')) { 
+                TypeID = 't2';GAname = '國外行程';
+            } else if (TA.hasClass('t3')) { 
+                TypeID = 't3'; GAname = '國內行程'; 
+            } else if (TA.hasClass('t4')) { 
+                TypeID = 't4'; GAname = '可樂自由行'; 
+                $YT.SearchIN = 'C';
+            }
+		}
+		var DH = '';
+		var APIURL = '';
+		var AUTOCOMURL = '';
+        var HotKeys = [];
+		if (TypeID === 't1') {
+			APIURL = 'https://travel.tw.campaign.yahoo.net/tour/accommodation/hot';
+			AUTOCOMURL = 'https://travel.tw.campaign.yahoo.net/tour/accommodation/autocomplete';
+			DH = '<div class="Row"><span class="SearchPeopleBox"><i class="SerachIcon People"></i><select id="SearchPeople"><option value="">入住人數</option>';
+			for ($i = 1; $i <= 15; $i++) {
+				DH += '<option value="' + $i + '">' + $i + '位房客</option>';
+			}
+			DH += '</select></span><span class="SearchTravelTypeBox"><i class="SerachIcon TravelType"></i><select id="SearchTravelType"><option value="">旅遊型態</option><option value="民宿">民宿</option><option value="酒店">酒店</option><option value="青年旅館">青年旅館</option></select></span></div>';
+			DH += '<div class="Row2"><span class="SearchCostLowBox"><i class="SerachIcon Money"></i><input type="number" min="0" id="SearchCostLow" placeholder="最低價錢" onChange="$YT.SearchMoneyCheck()" onInput="$YT.SearchMoneyCheck()"></span><span class="SearchCostHighBox"><i class="SerachIcon ArrRight"></i><input type="number" min="0" id="SearchCostHigh" placeholder="最高價錢" onChange="$YT.SearchMoneyCheck()" onInput="$YT.SearchMoneyCheck()"></span></div>';
+		} else {
+			var VendDH = '<select id="SearchVendor"><option value="0">旅行社</option>';
+			$.each($TSearchBlockCache.Vendor, function(k, v) {
+				VendDH += '<option value="' + v.id + '">' + v.name + '</option>';
+			});
+			VendDH += '</select>';
+			if (TypeID === 't4') {
+				VendDH = '<select id="SearchVendor"><option value="0">旅行社</option>';
+				$.each($TSearchBlockCache.Vendor, function(k, v) { if (v.name === '可樂旅遊') {
+					VendDH += '<option value="' + v.id + '">' + v.name + '</option>';
+				} });
+				VendDH += '</select>';
+			}
+			DH = '<div class="Row"><span class="SearchVendorBox"><i class="SerachIcon Vende"></i>' + VendDH + '</span><span class="SearchTravelTypeBox"><i class="SerachIcon TravelType"></i><select id="SearchTravelType"><option value="">旅遊型態</option>';
+			if (TypeID === 't2') {
+				AUTOCOMURL = 'https://travel.tw.campaign.yahoo.net/tour/abroad/autocomplete';
+                var OverseaType = ['自由行', '團體旅遊', '半/一日遊', '票券', '體驗活動'];
+                OverseaType = ['自由行', '票券']; //20201217 隱藏
+				$.each(OverseaType, function(k, v){
+					DH += '<option value="' + v + '">' + v + '</option>';
+				});
+				DH += '</select></span>';
+				APIURL = 'https://travel.tw.campaign.yahoo.net/tour/abroad/hot';
+                HotKeys = $TSearchBlockCache.Hot.abroad;
+				DH += '<span class="SearchTravelFromBox"><i class="SerachIcon TravelFrom"></i><select id="SearchTravelFrom"><option value="">出發地</option><option value="松山">松山</option><option value="桃園">桃園</option><option value="台中">台中</option><option value="高雄">高雄</option></select></span>';
+			} else if (TypeID === 't3') {
+				AUTOCOMURL = 'https://travel.tw.campaign.yahoo.net/tour/domestic/autocomplete';
+				APIURL = 'https://travel.tw.campaign.yahoo.net/tour/domestic/hot';
+				$.each(['團體旅遊', '自由行', '高鐵假期', '票券/活動'], function(k, v){
+					DH += '<option value="' + v + '">' + v + '</option>';
+				});
+				DH += '</select></span>';
+                HotKeys = $TSearchBlockCache.Hot.domestic;
+			} else if (TypeID === 't4') {
+				APIURL = 'https://travel.tw.campaign.yahoo.net/tour/colafit/hot';
+				$.each(['自助旅遊'], function(k, v){
+					DH += '<option value="' + v + '">' + v + '</option>';
+				});
+				DH += '</select></span>';
+				DH += '<span class="SearchTravelFromBox"><i class="SerachIcon TravelFrom"></i><select id="SearchTravelFrom"><option value="">出發地</option><option value="松山">松山</option><option value="桃園">桃園</option><option value="台中">台中</option><option value="高雄">高雄</option></select></span>';
+                HotKeys = $TSearchBlockCache.Hot.colafit;
+			}
+			DH += '</div>';
+			DH += '<div class="Row2"><span class="SearchCostLowBox"><i class="SerachIcon Money"></i><input type="number" min="0" id="SearchCostLow" placeholder="最低價錢" onChange="$YT.SearchMoneyCheck()" onInput="$YT.SearchMoneyCheck()"></span><span class="SearchCostHighBox"><i class="SerachIcon ArrRight"></i><input type="number" min="0" id="SearchCostHigh" placeholder="最高價錢" onChange="$YT.SearchMoneyCheck()" onInput="$YT.SearchMoneyCheck()"></span></div>';
+		}
+		$('#SearchExtra').removeClass('t1 t2 t3 t4').addClass(TypeID).html(DH);
+        DH = '';
+        if ($.isArray(HotKeys)) {
+            $.each(HotKeys, function(k, v) {
+                if (DH !== '') { DH += ' │ '; }
+                DH += '<a class="aditem" href="' + v.url + '" onclick="ga(\'send\',\'event\',\'' + GAtopic　+ '_' +　GAname +'\',\'click\',\'' + SQEsc(v.text) + 'Keyword\');">' + v.text + '</a>';
+            });
+        }
+        $('#SearchBox .ADText').html(DH);
+        $('#SearchPlace').on('keyup', function(e) {
+            var code = (e.keyCode ? e.keyCode : e.which);
+            if (code === 13) {
+                $YT.SendSRPSearch();
+            } else {
+                //Check input
+                var Val = $('#SearchPlace').val().trim();
+                console.log(Val);
+                if (Val == '') {
+                    $YT.SearchBindQS();
+                } else {
+                    $YT.SearchRemoveQS();
+                }
+            }
+        });
+        $('#SearchPlace').on('focus', function(e) {
+            var Val = $('#SearchPlace').val();
+            if (Val == '') {
+                $YT.SearchBindQS();
+            } else if (!$('#SearchPlace').hasClass('ui-autocomplete')) {
+                $('#SearchPlace').autocomplete({
+                    source: function( request, response ) {
+                        $.ajax({
+                            url: AUTOCOMURL,
+                            dataType: "jsonp",
+                            data: {
+                                keyword: request.term
+                            },
+                            success: function(data) {
+                                response($.map(data, function(item) {
+                                    return {
+                                      label: item.name,
+                                      value: item.name
+                                    };
+                                  }));
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        /*
+		if (TypeID === 't4') {
+			$YT.SearchBindCola();
+		} else {
+			$YT.SearchRemoveCola();
+            if (!$('#SearchPlace').hasClass('ui-autocomplete')) {
+                $('#SearchPlace').on('keydown', function(e) {
+                    if (e.keyCode === 13) {
+                        $YT.SendSRPSearch();
+                    }
+                }).autocomplete({
+                    source: function( request, response ) {
+                        $.ajax({
+                            url: AUTOCOMURL,
+                            dataType: "jsonp",
+                            data: {
+                                keyword: request.term
+                            },
+                            success: function(data) {
+                                response($.map(data, function(item) {
+                                    return {
+                                      label: item.name,
+                                      value: item.name
+                                    };
+                                  }));
+                            }
+                        });
+                    }
+                });
+            } else {
+                $('#SearchPlace').autocomplete( "enable" );
+                $('#SearchPlace').autocomplete( "option", "source", function( request, response ) {
+                        $.ajax({
+                            url: AUTOCOMURL,
+                            dataType: "jsonp",
+                            data: {
+                                keyword: request.term
+                            },
+                            success: function(data) {
+                                response($.map(data, function(item) {
+                                    return {
+                                      label: item.name,
+                                      value: item.name
+                                    };
+                                  }));
+                            }
+                        });
+                    });
+            }
+		}
+        */
+		if (!$YT.SearchLoaded) {
+			$YT.SearchLoaded = true;
+			$YT.PutSRPSearchData();
+		}
+	},
+    QSCache: {'D': '', 'O': '', 'C': ''},
+    ColaCache: '<div id="ColaBox"><ul id="ColaPlaceList"><li class="colaplace Activity" data-index="0" onclick="$YT.SwitchColaPlace($(this))"><b>港澳中國</b></li><li class="colaplace " data-index="1" onclick="$YT.SwitchColaPlace($(this))"><b>東北亞</b></li><li class="colaplace " data-index="2" onclick="$YT.SwitchColaPlace($(this))"><b>東南亞</b></li><li class="colaplace " data-index="3" onclick="$YT.SwitchColaPlace($(this))"><b>歐洲</b></li><li class="colaplace " data-index="4" onclick="$YT.SwitchColaPlace($(this))"><b>美加</b></li><li class="colaplace " data-index="5" onclick="$YT.SwitchColaPlace($(this))"><b>紐澳海島</b></li></ul><div id="ColaData"><div id="ColaData0" class=""><div class="ColaCol"><div class="ColaTopic"><b>港澳</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">香港</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">澳門</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>中國</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">上海</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">北京</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">杭州</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">桂林</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">成都</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">廣州</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">青島</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">廈門</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">深圳</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">重慶</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">武漢</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">昆明</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">南京</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">西安</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">黃山</button></div></div></div><div id="ColaData1" class="hide"><div class="ColaCol"><div class="ColaTopic"><b>日本</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">東京</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">大阪</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">京都</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">沖繩</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">福岡</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">熊本</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">長崎</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">名古屋</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">北海道</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>南韓</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">首爾</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">釜山</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">大邱</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">濟州島</button></div></div></div><div id="ColaData2" class="hide"><div class="ColaCol"><div class="ColaTopic"><b>泰國</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">曼谷</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>新加坡</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">新加坡</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>馬來西亞</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">吉隆坡</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">亞庇</button></div></div></div><div id="ColaData3" class="hide"><div class="ColaCol"><div class="ColaTopic"><b>英國</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">倫敦</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>法國</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">巴黎</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>義大利</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">羅馬</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>荷蘭</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">阿姆斯特丹</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>奧地利</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">維也納</button></div></div></div><div id="ColaData4" class="hide"><div class="ColaCol"><div class="ColaTopic"><b>美國</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">洛杉磯</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">舊金山</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">夏威夷</button></div></div></div><div id="ColaData5" class="hide"><div class="ColaCol"><div class="ColaTopic"><b>澳洲</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">雪梨</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">布里斯本</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">黃金海岸</button><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">墨爾本</button></div></div><div class="ColaCol"><div class="ColaTopic"><b>紐西蘭</b></div><div class="ColaCity"><button class="ColaSet" onclick="$YT.ColaSetWord($(this))">奧克蘭</button></div></div></div></div></div>',
+    BuildQSCache: function($Place) { //$Place => 'D': '國內 / 預設', 'O': '國外', 'C': '可樂'
+        if ($.inArray($Place, ['D', 'O', 'C']) < 0) {
+            $Place = 'D';
+        }
+        if ($YT.QSCache[$Place] !== '') {
+            return $YT.QSCache[$Place];
+        }
+        var DH = '<div class="QSBox" id="QSBox_' + $Place + '">';
+        DH += '<ul class="QSPlaceList">';
+		$.each($QSAlltour[$Place], function (k, v){
+			DH += '<li id="QSPlace_' + $Place + '_' + k + '" class="qsplace ' + (k > 0?'':'Activity') + '" data-group="' + $Place + '" data-index="' + k + '" onClick="$YT.SwitchQSPlace($(this))"><b>' + v.t + '</b></li>';
+		});
+        DH += '</ul><div class="QSData" id="QSData_' + $Place + '">';
+		$.each($QSAlltour[$Place], function (lk, lv){
+			DH += '<div id="QSData_' + $Place + '_' + lk + '" class="QSData_' + $Place + (lk > 0?' hide':'') + '">';
+			$.each(lv.s, function (k, v){
+				DH += '<div class="QSCol"><div class="QSTopic"><b>' + v.t + '</b></div><div class="QSCity">';
+				$.each(v.d, function (sk, sv){
+					DH += '<button class="QSSet" onClick="$YT.QSSetWord($(this))">' + sv + '</button>';
+				});
+				DH += '</div></div>';
+			});
+			DH += '</div>';
+		});
+		DH += '</div></div>';
+		$YT.QSCache[$Place] = DH;
+        return DH;
+    },
+    SwitchQSPlace: function(obj) {
+        var Group = obj.data('group');
+		var Index = obj.data('index');
+        $YT.SwitchQSPlaceVal(Group, Index);
+	},
+    SwitchQSPlaceVal: function(Group, Index) {
+		$('#QSData_' + Group + ' > div').hide();
+		$('#QSData_' + Group + '_' + Index).show();
+		$('.QSPlaceList li').removeClass('Activity');
+		$('#QSPlace_' + Group + '_' + Index).addClass('Activity');
+    },
+    QSSetWord: function(obj) {
+		$('#SearchPlace').val(obj.text());
+		$(document).unbind('click');
+		$('.QSBox').hide();
+	},
+    SearchBindQS: function() {
+		$YT.SearchSetQS();
+    },
+    QSmapping: {'D': 't3', 'O': 't2', 'C': 't4'},
+    SearchSetQS: function() {
+        if ($('#QSBox_' + $YT.SearchIN).length == 0) {
+            $('.QSBox').hide();
+            var DH = $YT.BuildQSCache($YT.SearchIN);
+            $('#SearchBox').append(DH);
+        } else {
+            $YT.SwitchQSPlaceVal($YT.SearchIN, 0);
+        }
+        $('#QSBox_' + $YT.SearchIN).show();
+        $(document).bind('click', function(e){
+            var Boxis = $('#QSBox_' + $YT.SearchIN);
+            var TextInput = $('#SearchPlace');
+            var QSmenu = $('#SearchVision .SearchList .' + $YT.QSmapping[$YT.SearchIN]);
+            var target = e.srcElement ? e.srcElement : e.target;
+            if (!Boxis.is(target) && Boxis.has(target).length === 0 && !TextInput.is(target) && TextInput.has(target).length === 0 && !QSmenu.is(target) && QSmenu.has(target).length === 0) {
+                $(document).unbind('click');
+                $('.QSBox').hide();
+            }
+        });
+    },
+    SearchRemoveQS: function() {
+		$(document).unbind('click');
+		$('.QSBox').hide();
+    },
+	BuildColaCache: function() {
+		if ($YT.ColaCache !== '') {
+			return false;	
+		}
+		var DH = '<div id="ColaBox">';
+		DH += '<ul id="ColaPlaceList">';
+		$.each($colatour, function (k, v){
+			DH += '<li class="colaplace ' + (k > 0?'':'Activity') + '" data-index="' + k + '" onClick="$YT.SwitchColaPlace($(this))"><b>' + v.t + '</b></li>';
+		});
+		DH += '</ul><div id="ColaData">';
+		$.each($colatour, function (lk, lv){
+			DH += '<div id="ColaData' + lk + '" class="' + (lk > 0?'hide':'') + '">';
+			$.each(lv.s, function (k, v){
+				DH += '<div class="ColaCol"><div class="ColaTopic"><b>' + v.t + '</b></div><div class="ColaCity">';
+				$.each(v.d, function (sk, sv){
+					DH += '<button class="ColaSet" onClick="$YT.ColaSetWord($(this))">' + sv + '</button>';
+				});
+				DH += '</div></div>';
+			});
+			DH += '</div>';
+		});
+		DH += '</div></div>';
+		$YT.ColaCache = DH;
+    },
+    SwitchColaPlace: function(obj) {
+		var Index = obj.data('index');
+		$('#ColaData > div').hide();
+		$('#ColaData' + Index).show();
+		$('#ColaPlaceList li').removeClass('Activity');
+		obj.addClass('Activity');
+	},
+    ColaSetWord: function(obj) {
+		$('#SearchPlace').val(obj.text());
+		$(document).unbind('click');
+		$('#ColaBox').hide();
+	},
+	SearchBindCola: function() {
+		$('#SearchPlace').autocomplete( "disable" ).bind('focus', function() {
+			$YT.SearchSetCola();
+		});
+	},
+	SearchSetCola: function() {
+		if ($('#ColaBox').length > 0) {
+			$('#ColaBox').show();
+			$(document).bind('click', function(e){
+				var Boxis = $('#ColaBox');
+				var TextInput = $('#SearchPlace');
+				var t4menu = $('#SearchVision .SearchList .t4');
+				var target = e.srcElement ? e.srcElement : e.target;
+				if (!Boxis.is(target) && Boxis.has(target).length === 0 && !TextInput.is(target) && TextInput.has(target).length === 0 && !t4menu.is(target) && t4menu.has(target).length === 0) {
+					$(document).unbind('click');
+					$('#ColaBox').hide();
+				}
+			});
+			return false;	
+		}
+		var DH = $YT.ColaCache;
+		if (DH === '') {
+			$YT.BuildColaCache();
+			DH = $YT.ColaCache;
+		}
+		$('#SearchBox').append(DH);
+		$('#SearchPlace').autocomplete( "disable" ).bind('focus', function() {
+			$YT.SearchSetCola();
+		});
+		$(document).bind('click', function(e){
+			var Boxis = $('#ColaBox');
+			var TextInput = $('#SearchPlace');
+			var t4menu = $('#SearchVision .SearchList .t4');
+			var target = e.srcElement ? e.srcElement : e.target;
+			if (!Boxis.is(target) && Boxis.has(target).length === 0 && !TextInput.is(target) && TextInput.has(target).length === 0 && !t4menu.is(target) && t4menu.has(target).length === 0) {
+				$(document).unbind('click');
+				$('#ColaBox').hide();
+            }
+		});
+	},
+	SearchRemoveCola: function() {
+		$(document).unbind('click');
+		$('#SearchPlace').unbind('focus');
+		$('#ColaBox').remove();
+	},
+	SwitchSearchEX: function() {
+		var ToH = 0;
+		if ($('#SearchExBTN').hasClass('Open')) {
+			$('#SearchExtra').hide();
+			ToH = 130;
+			if (__SearchinRight) {
+                ToH = 263;
+			}
+			$('#SearchVision').stop().stop().animate({height: ToH + 'px'}, {complete: function() {
+				$('#SearchExBTN').removeClass('Open');
+			}});
+		} else {
+			ToH = 220;
+			if (__SearchinRight) {
+					ToH = 413;
+			}
+			$('#SearchVision').stop().stop().animate({height: ToH + 'px'}, {complete: function() {
+				$('#SearchExtra').show();
+				$('#SearchExBTN').addClass('Open');
+			}});
+		}
+	},
+	SRPmnt: {'keyword': 'SearchPlace', 'periode': 'SearchEnd', 'periods': 'SearchStart', 'people': 'SearchPeople', 'type': 'SearchTravelType', 'price_from': 'SearchCostLow', 'price_to': 'SearchCostHigh', 'vendor': 'SearchVendor', 'from': 'SearchTravelFrom'},
+	PutSRPSearchData: function() {
+		if (__isSearchFrame) {
+			var TypeID = $.url().param('t');
+			if (typeof(TypeID) === 'undefined') {
+				TypeID = '';	
+			}
+			if (TypeID !== '') {
+				$YT.SwitchSearchType($('#SearchVision .SearchList li.' + $.url().param('t')));
+			}
+		}
+		$.each($YT.SRPmnt, function(k, v) {
+			if ($.url().param(k) !== undefined && $.url().param(k) !== '') {
+				$('#' + v).val(decodeURIComponent($.url().param(k)).trim());
+			}
+    		if (k === 'periods') {
+				$YT.SearchStartChange();
+			}
+		});
+	},
+	SendSRPSearch: function() {
+		var URL = '';
+		$.each($YT.SRPmnt, function(k, v) {
+			if ($('#' + v).length > 0) {
+				if ($('#' + v).val().trim() !== '') {
+					if (URL !== '') { URL += '&'; }
+					URL += (k + '=' + encodeURIComponent($('#' + v).val().trim()));
+				}
+			}
+		});
+		var TypeID = 't1';
+		if ($('#SearchBox .SearchList li.Activity').length > 0) {
+			var TA = $('#SearchBox .SearchList li.Activity');
+			if (TA.hasClass('t2')) { TypeID = 't2'; } else if (TA.hasClass('t3')) { TypeID = 't3'; } else if (TA.hasClass('t4')) { TypeID = 't4'; }
+		}
+		URL = '/tour?t=' + TypeID + '&' + URL;
+		document.location.href = URL;
+	},
+	PostGetFBComments: function() {
+		$.getJSON('https://graph.facebook.com/' + encodeURIComponent(ShareURL), function(json) {
+			var FBCommentCount = 0;
+			if ('share' in json && 'comment_count' in json.share) {
+				FBCommentCount = intval(json.share.comment_count);
+			}
+			$('#PostFBCommentsBox .msg').text((FBCommentCount === 0?'成為第一個留言的人':'檢視留言(' + FBCommentCount + ')'));
+			$('#PostFBCommentsBox').show();
+		});
+	},
+	LoadFBComments: function() {
+		$('#PostFBCommentsBox').attr('onclick', '');
+        $('#PostFBCommentsInBox').show();
+		return true;
+	},
+	ECSwitching: false,
+	SwitchEC: function(obj) {
+		if (obj.hasClass('Activity')) {
+			return false;
+		}
+		if ($YT.ECSwitching) {
+			return false;
+		}
+		$YT.ECSwitching = true;
+		var Clickin = intval(obj.data('block'));
+		$('#PostEC .Activity').removeClass('Activity');
+		obj.addClass('Activity');
+		$('#PostEC .mask .Activity').fadeOut({queue: false, complete: function() { $(this).removeClass('Activity').attr('style', ''); }});
+		$('#PostEC .mask #ecbox' + Clickin).fadeIn({queue: false, complete: function() { $(this).addClass('Activity').attr('style', '');$YT.ECSwitching = false; }});
+	},
+    MakeEC: function() {
+        //20200605 改寫模組
+        var Tag = '';
+        if (Tags.length > 0) {
+            Tag = Tags.join();
+        } 
+        $('#PostEC').load('/ajax/PostEC.php', {'tags': Tag}, function(){
+            if ($YT.EXPO) {
+                $YT.MakeEXPOShow();
+            }
+        })
+    },
+    MakeECCola: function() {
+        $.getJSON('https://travel.tw.campaign.yahoo.net/tour/relatived?category=colafit&callback=?').done(function(JSON){
+            if (JSON[0].list.length === 0) {
+                $('#PostECCola').remove();
+                return false;
+            }
+            var DH = '<ul class="ECList">';
+            var ShowActivity = 1;
+            if (JSON[0].list.length > 0) {
+                var Topic = '自 由 行';
+                var TopicExtraClass = '';
+                DH += '<li class="t1' + ((ShowActivity === 1)?' Activity':'') + TopicExtraClass + '" data-block="1" onclick="$YT.SwitchEC($(this));ga(\'send\',\'event\',\'可樂自由行_%文章頁%_%可樂自由行%Tab\',\'click\',\'%可樂自由行%\');"><span>' + Topic + '</span></li>';
+            } else {
+                ShowActivity = 2;
+            }
+            DH += '</ul>';
+            DH += '<div class="mask"><div class="ScrollBox">';
+            if (JSON[0].list.length > 0) {
+                DH += '<div id="ecbox1" class="ecbox' + ((ShowActivity === 1)?' Activity':'') + '">';
+                $.each(JSON[0].list, function(k, v) {
+                    DH += '<a class="item_block" target="_blank" rel="noopener noreferrer" href="' + v.link_url + '" onclick="ga(\'send\',\'event\',\'可樂自由行%文章頁%_行程內容\',\'click\',\'' + SQEsc(v.link_url) + '\');"><div class="item_img" style="background-image: url(' + v.img_url + ')"><div class="item_vend">' + v.vendor + '</div></div><div class="item_topic">' + v.title + '</div><div class="item_price">NT ' + addCommas(v.price) + '起</div></a>';
+                });
+                DH += '</div>';
+            }
+            DH += '</div></div>';
+            $('#PostECCola').html(DH).show();
+        });
+	},
+	SlateTo: function(sid) {
+		$YT.SlateStopAuto();
+		sid = intval(sid);
+		$('#SlateBox .slate_nav li').removeClass('Activity');
+		$('#SlateBox .slate_nav li:eq(' + sid + ')').addClass('Activity');
+		$('#SlateBox .ScrollBox').stop().stop().animate({top: (-372 * sid)}, {complete: function() {
+			$YT.SlateStartAuto();
+		}});
+	},
+	'SlateTimeStamp': {},
+	'SlateStartAuto': function() {
+		$YT.SlateStopAuto();
+		$YT.SlateTimeStamp = setInterval($YT.SlateNext, 5000);
+	},
+	'SlateStopAuto': function() {
+		clearInterval($YT.SlateTimeStamp);
+	},
+	'SlateNext': function() {
+		var NowPos = intval($('#SlateBox .slate_nav li.Activity').data('slateid'));
+		var TotalPos = $('#SlateBox .slate_nav li').length - 1;
+		if (NowPos === TotalPos) {
+			NowPos = -1;	
+		}
+		$YT.SlateTo(NowPos + 1);
+	},
+    PhotoTotal: 1,
+    PhotoMoving: false,
+    PhotoCount: 1,
+    PhotoPrev: function() {
+		ga('send','event','照片切換','click','%上一張%');
+		var NoteLeft = intval($('#PhotoNoteBox .Scroll').css('left')) * (-1);
+		var PageIn = Math.floor(NoteLeft / 300) + 1;
+		if (PageIn === 1) {
+			return false;	
+		}
+		if ($YT.PhotoMoving) {
+			return false;	
+		}
+		$YT.PhotoCount++;
+		if ($YT.PhotoCount % 5 === 0) {
+			//DARLA.event('ReloadPhotoAD');
+			//$YT.SetZ();	
+		}
+		var NextPage = PageIn - 1;
+		$YT.PhotoMoving = true;
+		$('#PhotoShowBox .Scroll').animate({left: ((NextPage - 1) * -898) + 'px'}, {duration: 'fast', queue: false});
+		$('#PhotoNoteBox .Scroll').animate({left: ((NextPage - 1) * -300) + 'px'}, {duration: 'fast', queue: false, complete: function() { $YT.PhotoMoving = false; }});
+	},
+    PhotoNext: function() {
+		ga('send','event','照片切換','click','%下一張%');
+		var TotalPage = $YT.PhotoTotal;
+		var NoteLeft = intval($('#PhotoNoteBox .Scroll').css('left')) * (-1);
+		var PageIn = Math.floor(NoteLeft / 300) + 1;
+		if (PageIn === TotalPage) {
+			return false;	
+		}
+		if ($YT.PhotoMoving) {
+			return false;	
+		}
+		$YT.PhotoCount++;
+		if ($YT.PhotoCount % 5 === 0) {
+            /*
+			DARLA.event('ReloadPhotoAD');
+			$YT.SetZ();
+			if (typeof(ga) == "function") {
+				ga('send', 'pageview');
+			}
+            */
+		}
+		var NextPage = PageIn + 1;
+		$YT.PhotoMoving = true;
+		$('#PhotoShowBox .Scroll').animate({left: ((NextPage - 1) * -898) + 'px'}, {duration: 'fast', queue: false});
+		$('#PhotoNoteBox .Scroll').animate({left: ((NextPage - 1) * -300) + 'px'}, {duration: 'fast', queue: false, complete: function() { $YT.PhotoMoving = false; }});
+
+    },
+    MakeConnoisseur: function() {
+		if (!$.isArray($ConnoisseurList) || $ConnoisseurList.length < 1){
+			return false;
+		}
+		var DH = '<div id="ConnoisseurList"><div class="Mask"><div class="Scroll">' + $YT.MakeConnoisseurBox(0, 0) + '</div></div><button class="left" onClick="$YT.ConnoisseurLeft();ga(\'send\',\'event\',\'駐站達人_列表頁_換頁\',\'click\',\'left\');"></button><button class="right" onClick="$YT.ConnoisseurRight();ga(\'send\',\'event\',\'駐站達人_列表頁_換頁\',\'click\',\'right\');"></button></div>';
+		$('#ConnoisseurListBlock').html(DH);	
+		$('#ConnoisseurListBlock').mouseleave($YT.ConnoisseurStartAuto).mouseenter($YT.ConnoisseurStopAuto);
+		$YT.ConnoisseurStartAuto();
+	},
+	ConnoisseurTimeStamp: {},
+	ConnoisseurStartAuto: function() {
+		$YT.ConnoisseurStopAuto();
+		$YT.ConnoisseurTimeStamp = setInterval($YT.ConnoisseurRight, 10000);
+	},
+	ConnoisseurStopAuto: function() {
+		try {
+			clearInterval($YT.ConnoisseurTimeStamp);
+		} catch(e){}
+	},
+	MakeConnoisseurBox: function($Now, $Move) {
+		if (!$.isArray($ConnoisseurList) || $ConnoisseurList.length < 1){
+			return '';
+		}
+		var CounData = $ConnoisseurList.length;
+		var DH = '';
+		var $StartAt = 0;
+		if ($.inArray(CounData, [1, 2, 3, 6]) < 0) {
+			$StartAt = $Now + ($Move * 6);
+			if ($StartAt >= CounData) {
+				$StartAt -= CounData;
+			} else if ($StartAt < 0) {
+				$StartAt = CounData + $StartAt;
+			}
+		}
+		for (var $i = 0; $i < 6; $i++) {
+			var v = $ConnoisseurList[$StartAt];
+			DH += '<a href="/tagged/' + encodeURIComponent(v.tag) + '" onclick="ga(\'send\',\'event\',\'駐站達人_列表頁\',\'click\',\'' + SQEsc(v.tag) + '\')" class="item_block" data-id="' + $StartAt + '"><div class="item_img" style="background-image: url(' + v.img + ')"><div class="item_txt"><div class="item_topic">' + v.name + '</div></div></div></a>';	
+			$StartAt++;
+			if ($StartAt > CounData - 1) { $StartAt = 0; }
+		}
+		return DH;
+	},
+	ConnoisseurMoving: false,
+	ConnoisseurLeft: function() {
+		if ($YT.ConnoisseurMoving) { return false; }
+		$YT.ConnoisseurMoving = true;
+		ga('send','event','駐站達人_列表頁_換頁','click','left');
+		var Now = $('#ConnoisseurList .item_block:first').data('id');
+		var DH = $YT.MakeConnoisseurBox(Now, -1);
+		$('#ConnoisseurList .Scroll').prepend(DH).css({'margin-left': '-1260px'}).animate({'margin-left': 0}, {complete: function() {
+			$('#ConnoisseurList .Scroll .item_block:gt(5)').remove();
+			$YT.ConnoisseurMoving = false;
+		}});
+	},
+	ConnoisseurRight: function() {
+		if ($YT.ConnoisseurMoving) { return false; }
+		$YT.ConnoisseurMoving = true;
+		ga('send','event','駐站達人_列表頁_換頁','click','right');
+		var Now = $('#ConnoisseurList .item_block:first').data('id');
+		var DH = $YT.MakeConnoisseurBox(Now, 1);
+		$('#ConnoisseurList .Scroll').append(DH).animate({'margin-left': '-1260px'}, {complete: function() {
+			$('#ConnoisseurList .Scroll .item_block:lt(6)').remove();
+			$('#ConnoisseurList .Scroll').css({'margin-left': 0});
+			$YT.ConnoisseurMoving = false;
+		}});
+	},
+    PageElementResize: function() {
+		var ImgFull = 500;
+		var ImgCenter = 100;
+		$('#LeftCol article .post_content img').each(function() {
+			var imgobj = $(this);
+			var origwidth = intval(imgobj.data('orig-width'));
+			if (origwidth > 0) {
+				imgobj.css({'max-width': origwidth});
+			}
+			imgobj.imagesLoaded(function() {
+				if (imgobj.width() >= ImgFull) {
+					imgobj.removeAttr('width height').css({'width': '100%', 'height': ''});	
+				} else if (imgobj.width() > ImgCenter && imgobj.width() < ImgFull) {
+					imgobj.wrap("<figure class='img-center'></figure>");
+				}
+			});
+		});
+		var VAWidth = $('#LeftCol article .post_content').width();
+		$('#LeftCol article .audio_container, #LeftCol article .video-wrapper').find('iframe, audio, video, div').add('#LeftCol article .post_content iframe, #LeftCol article .post_content audio, #LeftCol article .post_content video').each(function(){
+			var origwidth = $(this).width();
+			$(this).data('orig-width', origwidth).attr('data-orig-width', origwidth);
+			var origheigh = $(this).height();
+			var videorate = Math.round(origheigh * 100 / origwidth) / 100;
+			$(this).data('rate', videorate).attr('data-rate', videorate);
+			var NewHeight = VAWidth * videorate;
+			$(this).removeAttr('width height').width(VAWidth).height(NewHeight);	
+		});
+    },
+    ScrollToTop: function() {
+        $(window).scrollTop(0);
+    }
+};
+$domestic = [
+    {
+        't': '台灣',
+        's': [
+            {
+                't': '北部',
+                'd': ['台北', '新北', '基隆', '桃園', '新竹', '苗栗']
+            },
+            {
+                't': '中部',
+                'd': ['台中', '彰化', '南投', '雲林']
+            },
+            {
+                't': '南部',
+                'd': ['嘉義', '台南', '高雄', '屏東']
+            },
+            {
+                't': '東部',
+                'd': ['宜蘭', '花蓮', '台東']
+            },
+            {
+                't': '離島',
+                'd': ['澎湖', '金門', '馬祖', '綠島', '蘭嶼', '小琉球']
+            }
+        ]
+    }
+];
+$oversea = [
+    {
+		't': '港澳中國',
+		's': [
+			{
+				't': '港澳',
+				'd': ['香港', '澳門']
+			},
+			{
+				't': '中國',
+				'd': ['上海', '北京', '杭州', '桂林', '成都', '廣州', '青島', '廈門', '深圳', '重慶', '武漢', '昆明', '南京', '西安', '黃山']
+			}
+		]
+	},
+    {
+		't': '東北亞',
+		's': [
+			{
+				't': '日本',
+				'd': ['東京', '大阪', '京都', '沖繩', '福岡', '熊本', '長崎', '名古屋', '北海道']
+			},
+			{
+				't': '南韓',
+				'd': ['首爾', '釜山', '大邱', '濟州島']
+			}
+		]
+	},
+	{
+		't': '東南亞',
+		's': [
+			{
+				't': '泰國',
+				'd': ['曼谷', '清邁']
+			},
+			{
+				't': '新加坡',
+				'd': ['新加坡']
+			},
+			{
+				't': '馬來西亞',
+				'd': ['吉隆坡', '亞庇']
+			}
+		]
+	},
+	{
+		't': '歐洲',
+		's': [
+			{
+				't': '英國',
+				'd': ['倫敦']
+			},
+			{
+				't': '法國',
+				'd': ['巴黎']
+			},
+			{
+				't': '義大利',
+				'd': ['羅馬']
+			},
+			{
+				't': '荷蘭',
+				'd': ['阿姆斯特丹']
+			},
+			{
+				't': '奧地利',
+				'd': ['維也納']
+			}
+		]
+	},
+	{
+		't': '美加',
+		's': [
+			{
+				't': '美國',
+				'd': ['洛杉磯', '舊金山', '夏威夷']
+			}
+		]
+	},
+	{
+		't': '紐澳海島',
+		's': [
+			{
+				't': '澳洲',
+				'd': ['雪梨', '布里斯本', '黃金海岸', '墨爾本']
+			},
+			{
+				't': '紐西蘭',
+				'd': ['奧克蘭']
+			}
+		]
+	},
+	{
+		't': '其他',
+		's': [
+			{
+				't': '其他',
+				'd': ['帛琉']
+			}
+		]
+	}
+];
+$colatour = [
+    {
+        't': '台灣',
+        's': [
+            {
+                't': '北部',
+                'd': ['台北', '新北', '基隆', '桃園', '新竹', '苗栗']
+            },
+            {
+                't': '中部',
+                'd': ['台中', '彰化', '南投', '雲林']
+            },
+            {
+                't': '南部',
+                'd': ['嘉義', '台南', '高雄', '屏東']
+            },
+            {
+                't': '東部',
+                'd': ['宜蘭', '花蓮', '台東']
+            },
+            {
+                't': '離島',
+                'd': ['澎湖', '金門', '馬祖', '綠島', '蘭嶼', '小琉球']
+            }
+        ]
+    },
+	{
+		't': '港澳中國',
+		's': [
+			{
+				't': '港澳',
+				'd': ['香港', '澳門']
+			},
+			{
+				't': '中國',
+				'd': ['上海', '北京', '杭州', '桂林', '成都', '廣州', '青島', '廈門', '深圳', '重慶', '武漢', '昆明', '南京', '西安', '黃山']
+			}
+		]
+	},
+	{
+		't': '東北亞',
+		's': [
+			{
+				't': '日本',
+				'd': ['東京', '大阪', '京都', '沖繩', '福岡', '熊本', '長崎', '名古屋', '北海道']
+			},
+			{
+				't': '南韓',
+				'd': ['首爾', '釜山', '大邱', '濟州島']
+			}
+		]
+	},
+	{
+		't': '東南亞',
+		's': [
+			{
+				't': '泰國',
+				'd': ['曼谷']
+			},
+			{
+				't': '新加坡',
+				'd': ['新加坡']
+			},
+			{
+				't': '馬來西亞',
+				'd': ['吉隆坡', '亞庇']
+			}
+		]
+	},
+	{
+		't': '歐洲',
+		's': [
+			{
+				't': '英國',
+				'd': ['倫敦']
+			},
+			{
+				't': '法國',
+				'd': ['巴黎']
+			},
+			{
+				't': '義大利',
+				'd': ['羅馬']
+			},
+			{
+				't': '荷蘭',
+				'd': ['阿姆斯特丹']
+			},
+			{
+				't': '奧地利',
+				'd': ['維也納']
+			}
+		]
+	},
+	{
+		't': '美加',
+		's': [
+			{
+				't': '美國',
+				'd': ['洛杉磯', '舊金山', '夏威夷']
+			}
+		]
+	},
+	{
+		't': '紐澳海島',
+		's': [
+			{
+				't': '澳洲',
+				'd': ['雪梨', '布里斯本', '黃金海岸', '墨爾本']
+			},
+			{
+				't': '紐西蘭',
+				'd': ['奧克蘭']
+			}
+		]
+	}
+];
+$QSAlltour = {
+    'D': $domestic,
+    'O': $oversea,
+    'C': $colatour
+};
+/* jshint ignore:start */
+/* jQuery shuffle
+ * Copyright (c) 2008 Ca-Phun Ung <caphun at yelotofu dot com>
+ * Dual licensed under the MIT (MIT-LICENSE.txt)
+ * and GPL (GPL-LICENSE.txt) licenses.
+ * https://yelotofu.com/labs/jquery/snippets/shuffle/
+ * Shuffles an array or the children of a element container. This uses the Fisher-Yates shuffle algorithm <http: //jsfromhell.com/array/shuffle [v1.0]>
+ */
+(function($){$.fn.shuffle=function(){return this.each(function(){var items=$(this).children().clone(true);return (items.length)?$(this).html($.shuffle(items)):this;});};$.shuffle=function(arr){ for(var j,x,i=arr.length;i;j=parseInt(Math.random()*i),x=arr[--i],arr[i]=arr[j],arr[j]=x);return arr;}})(jQuery);
+/* jQuery url */
+!function(t){"function"==typeof define&&define.amd?define(t):window.purl=t()}(function(){function t(t,e){for(var r=decodeURI(t),n=l[e?"strict":"loose"].exec(r),a={attr:{},param:{},seg:{}},i=14;i--;)a.attr[h[i]]=n[i]||"";return a.param.query=o(a.attr.query),a.param.fragment=o(a.attr.fragment),a.seg.path=a.attr.path.replace(/^\/+|\/+$/g,"").split("/"),a.seg.fragment=a.attr.fragment.replace(/^\/+|\/+$/g,"").split("/"),a.attr.base=a.attr.host?(a.attr.protocol?a.attr.protocol+"://"+a.attr.host:a.attr.host)+(a.attr.port?":"+a.attr.port:""):"",a}function e(t){var e=t.tagName;return"undefined"!=typeof e?p[e.toLowerCase()]:e}function r(t,e){if(0===t[e].length)return t[e]={};var r={};for(var n in t[e])r[n]=t[e][n];return t[e]=r,r}function n(t,e,a,o){var i=t.shift();if(i){var f=e[a]=e[a]||[];"]"==i?u(f)?""!==o&&f.push(o):"object"==typeof f?f[c(f).length]=o:f=e[a]=[e[a],o]:~i.indexOf("]")?(i=i.substr(0,i.length-1),!m.test(i)&&u(f)&&(f=r(e,a)),n(t,f,i,o)):(!m.test(i)&&u(f)&&(f=r(e,a)),n(t,f,i,o))}else u(e[a])?e[a].push(o):e[a]="object"==typeof e[a]?o:"undefined"==typeof e[a]?o:[e[a],o]}function a(t,e,r){if(~e.indexOf("]")){var a=e.split("[");n(a,t,"base",r)}else{if(!m.test(e)&&u(t.base)){var o={};for(var f in t.base)o[f]=t.base[f];t.base=o}""!==e&&i(t.base,e,r)}return t}function o(t){return s(String(t).split(/&|;/),function(t,e){try{e=decodeURIComponent(e.replace(/\+/g," "))}catch(r){}var n=e.indexOf("="),o=f(e),i=e.substr(0,o||n),s=e.substr(o||n,e.length);return s=s.substr(s.indexOf("=")+1,s.length),""===i&&(i=e,s=""),a(t,i,s)},{base:{}}).base}function i(t,e,r){var n=t[e];"undefined"==typeof n?t[e]=r:u(n)?n.push(r):t[e]=[n,r]}function f(t){for(var e,r,n=t.length,a=0;n>a;++a)if(r=t[a],"]"==r&&(e=!1),"["==r&&(e=!0),"="==r&&!e)return a}function s(t,e){for(var r=0,n=t.length>>0,a=arguments[2];n>r;)r in t&&(a=e.call(void 0,a,t[r],r,t)),++r;return a}function u(t){return"[object Array]"===Object.prototype.toString.call(t)}function c(t){var e=[];for(var r in t)t.hasOwnProperty(r)&&e.push(r);return e}function d(e,r){return 1===arguments.length&&e===!0&&(r=!0,e=void 0),r=r||!1,e=e||window.location.toString(),{data:t(e,r),attr:function(t){return t=g[t]||t,"undefined"!=typeof t?this.data.attr[t]:this.data.attr},param:function(t){return"undefined"!=typeof t?this.data.param.query[t]:this.data.param.query},fparam:function(t){return"undefined"!=typeof t?this.data.param.fragment[t]:this.data.param.fragment},segment:function(t){return"undefined"==typeof t?this.data.seg.path:(t=0>t?this.data.seg.path.length+t:t-1,this.data.seg.path[t])},fsegment:function(t){return"undefined"==typeof t?this.data.seg.fragment:(t=0>t?this.data.seg.fragment.length+t:t-1,this.data.seg.fragment[t])}}}var p={a:"href",img:"src",form:"action",base:"href",script:"src",iframe:"src",link:"href",embed:"src",object:"data"},h=["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","fragment"],g={anchor:"fragment"},l={strict:/^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/,loose:/^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/},m=/^[0-9]+$/;return d.jQuery=function(t){null!=t&&(t.fn.url=function(r){var n="";return this.length&&(n=t(this).attr(e(this[0]))||""),d(n,r)},t.url=d)},d.jQuery(window.jQuery),d});
+/* jquery-truncate
+ * Copyright (c) 2012-2013 Thorsten Basse and contributors
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * https://github.com/tbasse/jquery-truncate
+*/
+!function(t){"use strict";function e(t,s,n,i,a,r,l,c){var o,d,f,h,g,p=function(t){r.text(t),r[c?"prepend":"append"](l)};return c?(o=0===i?"":n.slice(-i),d=n.slice(-a)):(o=n.slice(0,i),d=n.slice(0,a)),s<r.html(l)[t]()?0:(p(d),h=r[t](),p(o),g=r[t](),g>h?a:(f=parseInt((i+a)/2,10),o=c?n.slice(-f):n.slice(0,f),p(o),r[t]()===s?f:(r[t]()>s?a=f-1:i=f+1,e(t,s,n,i,a,r,l,c))))}t.fn.truncate=function(s){s&&s.center&&!s.side&&(s.side="center",delete s.center),s&&!/^(left|right|center)$/.test(s.side)&&delete s.side;var n={width:"auto",token:"&hellip;",side:"right",addclass:!1,addtitle:!1,multiline:!1,assumeSameStyle:!1};s=t.extend(n,s);var i,a,r,l;return s.assumeSameStyle&&(a=t(this[0]),i={fontFamily:a.css("fontFamily"),fontSize:a.css("fontSize"),fontStyle:a.css("fontStyle"),fontWeight:a.css("fontWeight"),"font-variant":a.css("font-variant"),"text-indent":a.css("text-indent"),"line-height":a.css("line-height"),"text-transform":a.css("text-transform"),"letter-spacing":a.css("letter-spacing"),"word-spacing":a.css("word-spacing"),display:"none"},r=t("<span/>").css(i).appendTo("body")),this.each(function(){a=t(this),l=a.text(),s.assumeSameStyle?r.text(l):(i={fontFamily:a.css("fontFamily"),fontSize:a.css("fontSize"),fontStyle:a.css("fontStyle"),fontWeight:a.css("fontWeight"),"font-variant":a.css("font-variant"),"text-indent":a.css("text-indent"),"line-height":a.css("line-height"),"text-transform":a.css("text-transform"),"letter-spacing":a.css("letter-spacing"),"word-spacing":a.css("word-spacing"),display:"none"},r=t("<span/>").css(i).text(l).appendTo("body"));var n,c,o,d=r.width(),f=parseInt(s.width,10)||a.width(),h="width";if(s.multiline?(r.width(a.width()),h="height",c=r.height(),o=a.height()+1):(c=d,o=f),n={before:"",after:""},c>o){var g,p;r.text(""),"left"===s.side?(g=e(h,o,l,0,l.length,r,s.token,!0),n.after=l.slice(-1*g)):"center"===s.side?(o=parseInt(o/2,10)-1,g=e(h,o,l,0,l.length,r,s.token,!1),p=e(h,o,l,0,l.length,r,"",!0),n.before=l.slice(0,g),n.after=l.slice(-1*p)):"right"===s.side&&(g=e(h,o,l,0,l.length,r,s.token,!1),n.before=l.slice(0,g)),s.addclass&&a.addClass(s.addclass),s.addtitle&&a.attr("title",l),n.before=r.text(n.before).html(),n.after=r.text(n.after).html(),a.empty().html(n.before+s.token+n.after)}s.assumeSameStyle||r.remove()})}}(jQuery);
+/*! iFrame Resizer (iframeSizer.min.js ) - v3.5.16 - 2018-01-21
+ *  Desc: Force cross domain iframes to size to content.
+ *  Requires: iframeResizer.contentWindow.min.js to be loaded into the target frame.
+ *  Copyright: (c) 2018 David J. Bradshaw - dave@bradshaw.net
+ *  License: MIT
+ */
+!function(a){"use strict";function b(a,b,c){"addEventListener"in window?a.addEventListener(b,c,!1):"attachEvent"in window&&a.attachEvent("on"+b,c)}function c(a,b,c){"removeEventListener"in window?a.removeEventListener(b,c,!1):"detachEvent"in window&&a.detachEvent("on"+b,c)}function d(){var a,b=["moz","webkit","o","ms"];for(a=0;a<b.length&&!N;a+=1)N=window[b[a]+"RequestAnimationFrame"];N||h("setup","RequestAnimationFrame not supported")}function e(a){var b="Host page: "+a;return window.top!==window.self&&(b=window.parentIFrame&&window.parentIFrame.getId?window.parentIFrame.getId()+": "+a:"Nested host page: "+a),b}function f(a){return K+"["+e(a)+"]"}function g(a){return P[a]?P[a].log:G}function h(a,b){k("log",a,b,g(a))}function i(a,b){k("info",a,b,g(a))}function j(a,b){k("warn",a,b,!0)}function k(a,b,c,d){!0===d&&"object"==typeof window.console&&console[a](f(b),c)}function l(a){function d(){function a(){s(U),p(V),I("resizedCallback",U)}f("Height"),f("Width"),t(a,U,"init")}function e(){var a=T.substr(L).split(":");return{iframe:P[a[0]]&&P[a[0]].iframe,id:a[0],height:a[1],width:a[2],type:a[3]}}function f(a){var b=Number(P[V]["max"+a]),c=Number(P[V]["min"+a]),d=a.toLowerCase(),e=Number(U[d]);h(V,"Checking "+d+" is in range "+c+"-"+b),c>e&&(e=c,h(V,"Set "+d+" to min value")),e>b&&(e=b,h(V,"Set "+d+" to max value")),U[d]=""+e}function g(){function b(){function a(){var a=0,b=!1;for(h(V,"Checking connection is from allowed list of origins: "+d);a<d.length;a++)if(d[a]===c){b=!0;break}return b}function b(){var a=P[V]&&P[V].remoteHost;return h(V,"Checking connection is from: "+a),c===a}return d.constructor===Array?a():b()}var c=a.origin,d=P[V]&&P[V].checkOrigin;if(d&&""+c!="null"&&!b())throw new Error("Unexpected message received from: "+c+" for "+U.iframe.id+". Message was: "+a.data+". This error can be disabled by setting the checkOrigin: false option or by providing of array of trusted domains.");return!0}function k(){return K===(""+T).substr(0,L)&&T.substr(L).split(":")[0]in P}function l(){var a=U.type in{"true":1,"false":1,undefined:1};return a&&h(V,"Ignoring init message from meta parent page"),a}function w(a){return T.substr(T.indexOf(":")+J+a)}function y(a){h(V,"MessageCallback passed: {iframe: "+U.iframe.id+", message: "+a+"}"),I("messageCallback",{iframe:U.iframe,message:JSON.parse(a)}),h(V,"--")}function z(){var a=document.body.getBoundingClientRect(),b=U.iframe.getBoundingClientRect();return JSON.stringify({iframeHeight:b.height,iframeWidth:b.width,clientHeight:Math.max(document.documentElement.clientHeight,window.innerHeight||0),clientWidth:Math.max(document.documentElement.clientWidth,window.innerWidth||0),offsetTop:parseInt(b.top-a.top,10),offsetLeft:parseInt(b.left-a.left,10),scrollTop:window.pageYOffset,scrollLeft:window.pageXOffset})}function A(a,b){function c(){u("Send Page Info","pageInfo:"+z(),a,b)}x(c,32)}function B(){function a(a,b){function c(){P[f]?A(P[f].iframe,f):d()}["scroll","resize"].forEach(function(d){h(f,a+d+" listener for sendPageInfo"),b(window,d,c)})}function d(){a("Remove ",c)}function e(){a("Add ",b)}var f=V;e(),P[f]&&(P[f].stopPageInfo=d)}function C(){P[V]&&P[V].stopPageInfo&&(P[V].stopPageInfo(),delete P[V].stopPageInfo)}function D(){var a=!0;return null===U.iframe&&(j(V,"IFrame ("+U.id+") not found"),a=!1),a}function E(a){var b=a.getBoundingClientRect();return o(V),{x:Math.floor(Number(b.left)+Number(M.x)),y:Math.floor(Number(b.top)+Number(M.y))}}function F(a){function b(){M=f,G(),h(V,"--")}function c(){return{x:Number(U.width)+e.x,y:Number(U.height)+e.y}}function d(){window.parentIFrame?window.parentIFrame["scrollTo"+(a?"Offset":"")](f.x,f.y):j(V,"Unable to scroll to requested position, window.parentIFrame not found")}var e=a?E(U.iframe):{x:0,y:0},f=c();h(V,"Reposition requested from iFrame (offset x:"+e.x+" y:"+e.y+")"),window.top!==window.self?d():b()}function G(){!1!==I("scrollCallback",M)?p(V):q()}function H(a){function b(){var a=E(f);h(V,"Moving to in page link (#"+d+") at x: "+a.x+" y: "+a.y),M={x:a.x,y:a.y},G(),h(V,"--")}function c(){window.parentIFrame?window.parentIFrame.moveToAnchor(d):h(V,"In page link #"+d+" not found and window.parentIFrame not found")}var d=a.split("#")[1]||"",e=decodeURIComponent(d),f=document.getElementById(e)||document.getElementsByName(e)[0];f?b():window.top!==window.self?c():h(V,"In page link #"+d+" not found")}function I(a,b){return m(V,a,b)}function N(){switch(P[V]&&P[V].firstRun&&S(),U.type){case"close":P[V].closeRequestCallback?m(V,"closeRequestCallback",P[V].iframe):n(U.iframe);break;case"message":y(w(6));break;case"scrollTo":F(!1);break;case"scrollToOffset":F(!0);break;case"pageInfo":A(P[V]&&P[V].iframe,V),B();break;case"pageInfoStop":C();break;case"inPageLink":H(w(9));break;case"reset":r(U);break;case"init":d(),I("initCallback",U.iframe);break;default:d()}}function O(a){var b=!0;return P[a]||(b=!1,j(U.type+" No settings for "+a+". Message was: "+T)),b}function Q(){for(var a in P)u("iFrame requested init",v(a),document.getElementById(a),a)}function S(){P[V]&&(P[V].firstRun=!1)}var T=a.data,U={},V=null;"[iFrameResizerChild]Ready"===T?Q():k()?(U=e(),V=R=U.id,P[V]&&(P[V].loaded=!0),!l()&&O(V)&&(h(V,"Received: "+T),D()&&g()&&N())):i(V,"Ignored: "+T)}function m(a,b,c){var d=null,e=null;if(P[a]){if(d=P[a][b],"function"!=typeof d)throw new TypeError(b+" on iFrame["+a+"] is not a function");e=d(c)}return e}function n(a){var b=a.id;h(b,"Removing iFrame: "+b),a.parentNode&&a.parentNode.removeChild(a),m(b,"closedCallback",b),h(b,"--"),delete P[b]}function o(b){null===M&&(M={x:window.pageXOffset!==a?window.pageXOffset:document.documentElement.scrollLeft,y:window.pageYOffset!==a?window.pageYOffset:document.documentElement.scrollTop},h(b,"Get page position: "+M.x+","+M.y))}function p(a){null!==M&&(window.scrollTo(M.x,M.y),h(a,"Set page position: "+M.x+","+M.y),q())}function q(){M=null}function r(a){function b(){s(a),u("reset","reset",a.iframe,a.id)}h(a.id,"Size reset requested by "+("init"===a.type?"host page":"iFrame")),o(a.id),t(b,a,"reset")}function s(a){function b(b){a.iframe.style[b]=a[b]+"px",h(a.id,"IFrame ("+e+") "+b+" set to "+a[b]+"px")}function c(b){H||"0"!==a[b]||(H=!0,h(e,"Hidden iFrame detected, creating visibility listener"),y())}function d(a){b(a),c(a)}var e=a.iframe.id;P[e]&&(P[e].sizeHeight&&d("height"),P[e].sizeWidth&&d("width"))}function t(a,b,c){c!==b.type&&N?(h(b.id,"Requesting animation frame"),N(a)):a()}function u(a,b,c,d,e){function f(){var e=P[d]&&P[d].targetOrigin;h(d,"["+a+"] Sending msg to iframe["+d+"] ("+b+") targetOrigin: "+e),c.contentWindow.postMessage(K+b,e)}function g(){j(d,"["+a+"] IFrame("+d+") not found")}function i(){c&&"contentWindow"in c&&null!==c.contentWindow?f():g()}function k(){function a(){!P[d]||P[d].loaded||l||(l=!0,j(d,"IFrame has not responded within "+P[d].warningTimeout/1e3+" seconds. Check iFrameResizer.contentWindow.js has been loaded in iFrame. This message can be ingored if everything is working, or you can set the warningTimeout option to a higher value or zero to suppress this warning."))}e&&P[d]&&P[d].warningTimeout&&(P[d].msgTimeout=setTimeout(a,P[d].warningTimeout))}var l=!1;d=d||c.id,P[d]&&(i(),k())}function v(a){return a+":"+P[a].bodyMarginV1+":"+P[a].sizeWidth+":"+P[a].log+":"+P[a].interval+":"+P[a].enablePublicMethods+":"+P[a].autoResize+":"+P[a].bodyMargin+":"+P[a].heightCalculationMethod+":"+P[a].bodyBackground+":"+P[a].bodyPadding+":"+P[a].tolerance+":"+P[a].inPageLinks+":"+P[a].resizeFrom+":"+P[a].widthCalculationMethod}function w(c,d){function e(){function a(a){1/0!==P[x][a]&&0!==P[x][a]&&(c.style[a]=P[x][a]+"px",h(x,"Set "+a+" = "+P[x][a]+"px"))}function b(a){if(P[x]["min"+a]>P[x]["max"+a])throw new Error("Value for min"+a+" can not be greater than max"+a)}b("Height"),b("Width"),a("maxHeight"),a("minHeight"),a("maxWidth"),a("minWidth")}function f(){var a=d&&d.id||S.id+F++;return null!==document.getElementById(a)&&(a+=F++),a}function g(a){return R=a,""===a&&(c.id=a=f(),G=(d||{}).log,R=a,h(a,"Added missing iframe ID: "+a+" ("+c.src+")")),a}function i(){switch(h(x,"IFrame scrolling "+(P[x]&&P[x].scrolling?"enabled":"disabled")+" for "+x),c.style.overflow=!1===(P[x]&&P[x].scrolling)?"hidden":"auto",P[x]&&P[x].scrolling){case!0:c.scrolling="yes";break;case!1:c.scrolling="no";break;default:c.scrolling=P[x]?P[x].scrolling:"no"}}function k(){("number"==typeof(P[x]&&P[x].bodyMargin)||"0"===(P[x]&&P[x].bodyMargin))&&(P[x].bodyMarginV1=P[x].bodyMargin,P[x].bodyMargin=""+P[x].bodyMargin+"px")}function l(){var a=P[x]&&P[x].firstRun,b=P[x]&&P[x].heightCalculationMethod in O;!a&&b&&r({iframe:c,height:0,width:0,type:"init"})}function m(){Function.prototype.bind&&P[x]&&(P[x].iframe.iFrameResizer={close:n.bind(null,P[x].iframe),resize:u.bind(null,"Window resize","resize",P[x].iframe),moveToAnchor:function(a){u("Move to anchor","moveToAnchor:"+a,P[x].iframe,x)},sendMessage:function(a){a=JSON.stringify(a),u("Send Message","message:"+a,P[x].iframe,x)}})}function o(d){function e(){u("iFrame.onload",d,c,a,!0),l()}b(c,"load",e),u("init",d,c,a,!0)}function p(a){if("object"!=typeof a)throw new TypeError("Options is not an object")}function q(a){for(var b in S)S.hasOwnProperty(b)&&(P[x][b]=a.hasOwnProperty(b)?a[b]:S[b])}function s(a){return""===a||"file://"===a?"*":a}function t(a){a=a||{},P[x]={firstRun:!0,iframe:c,remoteHost:c.src.split("/").slice(0,3).join("/")},p(a),q(a),P[x]&&(P[x].targetOrigin=!0===P[x].checkOrigin?s(P[x].remoteHost):"*")}function w(){return x in P&&"iFrameResizer"in c}var x=g(c.id);w()?j(x,"Ignored iFrame, already setup."):(t(d),i(),e(),k(),o(v(x)),m())}function x(a,b){null===Q&&(Q=setTimeout(function(){Q=null,a()},b))}function y(){function a(){function a(a){function b(b){return"0px"===(P[a]&&P[a].iframe.style[b])}function c(a){return null!==a.offsetParent}P[a]&&c(P[a].iframe)&&(b("height")||b("width"))&&u("Visibility change","resize",P[a].iframe,a)}for(var b in P)a(b)}function b(b){h("window","Mutation observed: "+b[0].target+" "+b[0].type),x(a,16)}function c(){var a=document.querySelector("body"),c={attributes:!0,attributeOldValue:!1,characterData:!0,characterDataOldValue:!1,childList:!0,subtree:!0},e=new d(b);e.observe(a,c)}var d=window.MutationObserver||window.WebKitMutationObserver;d&&c()}function z(a){function b(){B("Window "+a,"resize")}h("window","Trigger event: "+a),x(b,16)}function A(){function a(){B("Tab Visable","resize")}"hidden"!==document.visibilityState&&(h("document","Trigger event: Visiblity change"),x(a,16))}function B(a,b){function c(a){return P[a]&&"parent"===P[a].resizeFrom&&P[a].autoResize&&!P[a].firstRun}for(var d in P)c(d)&&u(a,b,document.getElementById(d),d)}function C(){b(window,"message",l),b(window,"resize",function(){z("resize")}),b(document,"visibilitychange",A),b(document,"-webkit-visibilitychange",A),b(window,"focusin",function(){z("focus")}),b(window,"focus",function(){z("focus")})}function D(){function b(a,b){function c(){if(!b.tagName)throw new TypeError("Object is not a valid DOM element");if("IFRAME"!==b.tagName.toUpperCase())throw new TypeError("Expected <IFRAME> tag, found <"+b.tagName+">")}b&&(c(),w(b,a),e.push(b))}function c(a){a&&a.enablePublicMethods&&j("enablePublicMethods option has been removed, public methods are now always available in the iFrame")}var e;return d(),C(),function(d,f){switch(e=[],c(d),typeof f){case"undefined":case"string":Array.prototype.forEach.call(document.querySelectorAll(f||"iframe"),b.bind(a,d));break;case"object":b(d,f);break;default:throw new TypeError("Unexpected data type ("+typeof f+")")}return e}}function E(a){a.fn?a.fn.iFrameResize||(a.fn.iFrameResize=function(a){function b(b,c){w(c,a)}return this.filter("iframe").each(b).end()}):i("","Unable to bind to jQuery, it is not fully loaded.")}if("undefined"!=typeof window){var F=0,G=!1,H=!1,I="message",J=I.length,K="[iFrameSizer]",L=K.length,M=null,N=window.requestAnimationFrame,O={max:1,scroll:1,bodyScroll:1,documentElementScroll:1},P={},Q=null,R="Host Page",S={autoResize:!0,bodyBackground:null,bodyMargin:null,bodyMarginV1:8,bodyPadding:null,checkOrigin:!0,inPageLinks:!1,enablePublicMethods:!0,heightCalculationMethod:"bodyOffset",id:"iFrameResizer",interval:32,log:!1,maxHeight:1/0,maxWidth:1/0,minHeight:0,minWidth:0,resizeFrom:"parent",scrolling:!1,sizeHeight:!0,sizeWidth:!1,warningTimeout:5e3,tolerance:0,widthCalculationMethod:"scroll",closedCallback:function(){},initCallback:function(){},messageCallback:function(){j("MessageCallback function not defined")},resizedCallback:function(){},scrollCallback:function(){return!0}};window.jQuery&&E(window.jQuery),"function"==typeof define&&define.amd?define([],D):"object"==typeof module&&"object"==typeof module.exports?module.exports=D():window.iFrameResize=window.iFrameResize||D()}}();
+/*!
+ * clipboard.js v1.7.1
+ * https://zenorocha.github.io/clipboard.js
+ *
+ * Licensed MIT © Zeno Rocha
+ */
+!function(t){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=t();else if("function"==typeof define&&define.amd)define([],t);else{var e;e="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:this,e.Clipboard=t()}}(function(){var t,e,n;return function t(e,n,o){function i(a,c){if(!n[a]){if(!e[a]){var l="function"==typeof require&&require;if(!c&&l)return l(a,!0);if(r)return r(a,!0);var s=new Error("Cannot find module '"+a+"'");throw s.code="MODULE_NOT_FOUND",s}var u=n[a]={exports:{}};e[a][0].call(u.exports,function(t){var n=e[a][1][t];return i(n||t)},u,u.exports,t,e,n,o)}return n[a].exports}for(var r="function"==typeof require&&require,a=0;a<o.length;a++)i(o[a]);return i}({1:[function(t,e,n){function o(t,e){for(;t&&t.nodeType!==i;){if("function"==typeof t.matches&&t.matches(e))return t;t=t.parentNode}}var i=9;if("undefined"!=typeof Element&&!Element.prototype.matches){var r=Element.prototype;r.matches=r.matchesSelector||r.mozMatchesSelector||r.msMatchesSelector||r.oMatchesSelector||r.webkitMatchesSelector}e.exports=o},{}],2:[function(t,e,n){function o(t,e,n,o,r){var a=i.apply(this,arguments);return t.addEventListener(n,a,r),{destroy:function(){t.removeEventListener(n,a,r)}}}function i(t,e,n,o){return function(n){n.delegateTarget=r(n.target,e),n.delegateTarget&&o.call(t,n)}}var r=t("./closest");e.exports=o},{"./closest":1}],3:[function(t,e,n){n.node=function(t){return void 0!==t&&t instanceof HTMLElement&&1===t.nodeType},n.nodeList=function(t){var e=Object.prototype.toString.call(t);return void 0!==t&&("[object NodeList]"===e||"[object HTMLCollection]"===e)&&"length"in t&&(0===t.length||n.node(t[0]))},n.string=function(t){return"string"==typeof t||t instanceof String},n.fn=function(t){return"[object Function]"===Object.prototype.toString.call(t)}},{}],4:[function(t,e,n){function o(t,e,n){if(!t&&!e&&!n)throw new Error("Missing required arguments");if(!c.string(e))throw new TypeError("Second argument must be a String");if(!c.fn(n))throw new TypeError("Third argument must be a Function");if(c.node(t))return i(t,e,n);if(c.nodeList(t))return r(t,e,n);if(c.string(t))return a(t,e,n);throw new TypeError("First argument must be a String, HTMLElement, HTMLCollection, or NodeList")}function i(t,e,n){return t.addEventListener(e,n),{destroy:function(){t.removeEventListener(e,n)}}}function r(t,e,n){return Array.prototype.forEach.call(t,function(t){t.addEventListener(e,n)}),{destroy:function(){Array.prototype.forEach.call(t,function(t){t.removeEventListener(e,n)})}}}function a(t,e,n){return l(document.body,t,e,n)}var c=t("./is"),l=t("delegate");e.exports=o},{"./is":3,delegate:2}],5:[function(t,e,n){function o(t){var e;if("SELECT"===t.nodeName)t.focus(),e=t.value;else if("INPUT"===t.nodeName||"TEXTAREA"===t.nodeName){var n=t.hasAttribute("readonly");n||t.setAttribute("readonly",""),t.select(),t.setSelectionRange(0,t.value.length),n||t.removeAttribute("readonly"),e=t.value}else{t.hasAttribute("contenteditable")&&t.focus();var o=window.getSelection(),i=document.createRange();i.selectNodeContents(t),o.removeAllRanges(),o.addRange(i),e=o.toString()}return e}e.exports=o},{}],6:[function(t,e,n){function o(){}o.prototype={on:function(t,e,n){var o=this.e||(this.e={});return(o[t]||(o[t]=[])).push({fn:e,ctx:n}),this},once:function(t,e,n){function o(){i.off(t,o),e.apply(n,arguments)}var i=this;return o._=e,this.on(t,o,n)},emit:function(t){var e=[].slice.call(arguments,1),n=((this.e||(this.e={}))[t]||[]).slice(),o=0,i=n.length;for(o;o<i;o++)n[o].fn.apply(n[o].ctx,e);return this},off:function(t,e){var n=this.e||(this.e={}),o=n[t],i=[];if(o&&e)for(var r=0,a=o.length;r<a;r++)o[r].fn!==e&&o[r].fn._!==e&&i.push(o[r]);return i.length?n[t]=i:delete n[t],this}},e.exports=o},{}],7:[function(e,n,o){!function(i,r){if("function"==typeof t&&t.amd)t(["module","select"],r);else if(void 0!==o)r(n,e("select"));else{var a={exports:{}};r(a,i.select),i.clipboardAction=a.exports}}(this,function(t,e){"use strict";function n(t){return t&&t.__esModule?t:{default:t}}function o(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}var i=n(e),r="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t},a=function(){function t(t,e){for(var n=0;n<e.length;n++){var o=e[n];o.enumerable=o.enumerable||!1,o.configurable=!0,"value"in o&&(o.writable=!0),Object.defineProperty(t,o.key,o)}}return function(e,n,o){return n&&t(e.prototype,n),o&&t(e,o),e}}(),c=function(){function t(e){o(this,t),this.resolveOptions(e),this.initSelection()}return a(t,[{key:"resolveOptions",value:function t(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:{};this.action=e.action,this.container=e.container,this.emitter=e.emitter,this.target=e.target,this.text=e.text,this.trigger=e.trigger,this.selectedText=""}},{key:"initSelection",value:function t(){this.text?this.selectFake():this.target&&this.selectTarget()}},{key:"selectFake",value:function t(){var e=this,n="rtl"==document.documentElement.getAttribute("dir");this.removeFake(),this.fakeHandlerCallback=function(){return e.removeFake()},this.fakeHandler=this.container.addEventListener("click",this.fakeHandlerCallback)||!0,this.fakeElem=document.createElement("textarea"),this.fakeElem.style.fontSize="12pt",this.fakeElem.style.border="0",this.fakeElem.style.padding="0",this.fakeElem.style.margin="0",this.fakeElem.style.position="absolute",this.fakeElem.style[n?"right":"left"]="-9999px";var o=window.pageYOffset||document.documentElement.scrollTop;this.fakeElem.style.top=o+"px",this.fakeElem.setAttribute("readonly",""),this.fakeElem.value=this.text,this.container.appendChild(this.fakeElem),this.selectedText=(0,i.default)(this.fakeElem),this.copyText()}},{key:"removeFake",value:function t(){this.fakeHandler&&(this.container.removeEventListener("click",this.fakeHandlerCallback),this.fakeHandler=null,this.fakeHandlerCallback=null),this.fakeElem&&(this.container.removeChild(this.fakeElem),this.fakeElem=null)}},{key:"selectTarget",value:function t(){this.selectedText=(0,i.default)(this.target),this.copyText()}},{key:"copyText",value:function t(){var e=void 0;try{e=document.execCommand(this.action)}catch(t){e=!1}this.handleResult(e)}},{key:"handleResult",value:function t(e){this.emitter.emit(e?"success":"error",{action:this.action,text:this.selectedText,trigger:this.trigger,clearSelection:this.clearSelection.bind(this)})}},{key:"clearSelection",value:function t(){this.trigger&&this.trigger.focus(),window.getSelection().removeAllRanges()}},{key:"destroy",value:function t(){this.removeFake()}},{key:"action",set:function t(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:"copy";if(this._action=e,"copy"!==this._action&&"cut"!==this._action)throw new Error('Invalid "action" value, use either "copy" or "cut"')},get:function t(){return this._action}},{key:"target",set:function t(e){if(void 0!==e){if(!e||"object"!==(void 0===e?"undefined":r(e))||1!==e.nodeType)throw new Error('Invalid "target" value, use a valid Element');if("copy"===this.action&&e.hasAttribute("disabled"))throw new Error('Invalid "target" attribute. Please use "readonly" instead of "disabled" attribute');if("cut"===this.action&&(e.hasAttribute("readonly")||e.hasAttribute("disabled")))throw new Error('Invalid "target" attribute. You can\'t cut text from elements with "readonly" or "disabled" attributes');this._target=e}},get:function t(){return this._target}}]),t}();t.exports=c})},{select:5}],8:[function(e,n,o){!function(i,r){if("function"==typeof t&&t.amd)t(["module","./clipboard-action","tiny-emitter","good-listener"],r);else if(void 0!==o)r(n,e("./clipboard-action"),e("tiny-emitter"),e("good-listener"));else{var a={exports:{}};r(a,i.clipboardAction,i.tinyEmitter,i.goodListener),i.clipboard=a.exports}}(this,function(t,e,n,o){"use strict";function i(t){return t&&t.__esModule?t:{default:t}}function r(t,e){if(!(t instanceof e))throw new TypeError("Cannot call a class as a function")}function a(t,e){if(!t)throw new ReferenceError("this hasn't been initialised - super() hasn't been called");return!e||"object"!=typeof e&&"function"!=typeof e?t:e}function c(t,e){if("function"!=typeof e&&null!==e)throw new TypeError("Super expression must either be null or a function, not "+typeof e);t.prototype=Object.create(e&&e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}}),e&&(Object.setPrototypeOf?Object.setPrototypeOf(t,e):t.__proto__=e)}function l(t,e){var n="data-clipboard-"+t;if(e.hasAttribute(n))return e.getAttribute(n)}var s=i(e),u=i(n),f=i(o),d="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t},h=function(){function t(t,e){for(var n=0;n<e.length;n++){var o=e[n];o.enumerable=o.enumerable||!1,o.configurable=!0,"value"in o&&(o.writable=!0),Object.defineProperty(t,o.key,o)}}return function(e,n,o){return n&&t(e.prototype,n),o&&t(e,o),e}}(),p=function(t){function e(t,n){r(this,e);var o=a(this,(e.__proto__||Object.getPrototypeOf(e)).call(this));return o.resolveOptions(n),o.listenClick(t),o}return c(e,t),h(e,[{key:"resolveOptions",value:function t(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:{};this.action="function"==typeof e.action?e.action:this.defaultAction,this.target="function"==typeof e.target?e.target:this.defaultTarget,this.text="function"==typeof e.text?e.text:this.defaultText,this.container="object"===d(e.container)?e.container:document.body}},{key:"listenClick",value:function t(e){var n=this;this.listener=(0,f.default)(e,"click",function(t){return n.onClick(t)})}},{key:"onClick",value:function t(e){var n=e.delegateTarget||e.currentTarget;this.clipboardAction&&(this.clipboardAction=null),this.clipboardAction=new s.default({action:this.action(n),target:this.target(n),text:this.text(n),container:this.container,trigger:n,emitter:this})}},{key:"defaultAction",value:function t(e){return l("action",e)}},{key:"defaultTarget",value:function t(e){var n=l("target",e);if(n)return document.querySelector(n)}},{key:"defaultText",value:function t(e){return l("text",e)}},{key:"destroy",value:function t(){this.listener.destroy(),this.clipboardAction&&(this.clipboardAction.destroy(),this.clipboardAction=null)}}],[{key:"isSupported",value:function t(){var e=arguments.length>0&&void 0!==arguments[0]?arguments[0]:["copy","cut"],n="string"==typeof e?[e]:e,o=!!document.queryCommandSupported;return n.forEach(function(t){o=o&&!!document.queryCommandSupported(t)}),o}}]),e}(u.default);t.exports=p})},{"./clipboard-action":7,"good-listener":4,"tiny-emitter":6}]},{},[8])(8)});
+/*!
+ * imagesLoaded PACKAGED v4.1.4
+ * JavaScript is all like "You images are done yet or what?"
+ * MIT License
+ */
+
+!function(e,t){"function"==typeof define&&define.amd?define("ev-emitter/ev-emitter",t):"object"==typeof module&&module.exports?module.exports=t():e.EvEmitter=t()}("undefined"!=typeof window?window:this,function(){function e(){}var t=e.prototype;return t.on=function(e,t){if(e&&t){var i=this._events=this._events||{},n=i[e]=i[e]||[];return n.indexOf(t)==-1&&n.push(t),this}},t.once=function(e,t){if(e&&t){this.on(e,t);var i=this._onceEvents=this._onceEvents||{},n=i[e]=i[e]||{};return n[t]=!0,this}},t.off=function(e,t){var i=this._events&&this._events[e];if(i&&i.length){var n=i.indexOf(t);return n!=-1&&i.splice(n,1),this}},t.emitEvent=function(e,t){var i=this._events&&this._events[e];if(i&&i.length){i=i.slice(0),t=t||[];for(var n=this._onceEvents&&this._onceEvents[e],o=0;o<i.length;o++){var r=i[o],s=n&&n[r];s&&(this.off(e,r),delete n[r]),r.apply(this,t)}return this}},t.allOff=function(){delete this._events,delete this._onceEvents},e}),function(e,t){"use strict";"function"==typeof define&&define.amd?define(["ev-emitter/ev-emitter"],function(i){return t(e,i)}):"object"==typeof module&&module.exports?module.exports=t(e,require("ev-emitter")):e.imagesLoaded=t(e,e.EvEmitter)}("undefined"!=typeof window?window:this,function(e,t){function i(e,t){for(var i in t)e[i]=t[i];return e}function n(e){if(Array.isArray(e))return e;var t="object"==typeof e&&"number"==typeof e.length;return t?d.call(e):[e]}function o(e,t,r){if(!(this instanceof o))return new o(e,t,r);var s=e;return"string"==typeof e&&(s=document.querySelectorAll(e)),s?(this.elements=n(s),this.options=i({},this.options),"function"==typeof t?r=t:i(this.options,t),r&&this.on("always",r),this.getImages(),h&&(this.jqDeferred=new h.Deferred),void setTimeout(this.check.bind(this))):void a.error("Bad element for imagesLoaded "+(s||e))}function r(e){this.img=e}function s(e,t){this.url=e,this.element=t,this.img=new Image}var h=e.jQuery,a=e.console,d=Array.prototype.slice;o.prototype=Object.create(t.prototype),o.prototype.options={},o.prototype.getImages=function(){this.images=[],this.elements.forEach(this.addElementImages,this)},o.prototype.addElementImages=function(e){"IMG"==e.nodeName&&this.addImage(e),this.options.background===!0&&this.addElementBackgroundImages(e);var t=e.nodeType;if(t&&u[t]){for(var i=e.querySelectorAll("img"),n=0;n<i.length;n++){var o=i[n];this.addImage(o)}if("string"==typeof this.options.background){var r=e.querySelectorAll(this.options.background);for(n=0;n<r.length;n++){var s=r[n];this.addElementBackgroundImages(s)}}}};var u={1:!0,9:!0,11:!0};return o.prototype.addElementBackgroundImages=function(e){var t=getComputedStyle(e);if(t)for(var i=/url\((['"])?(.*?)\1\)/gi,n=i.exec(t.backgroundImage);null!==n;){var o=n&&n[2];o&&this.addBackground(o,e),n=i.exec(t.backgroundImage)}},o.prototype.addImage=function(e){var t=new r(e);this.images.push(t)},o.prototype.addBackground=function(e,t){var i=new s(e,t);this.images.push(i)},o.prototype.check=function(){function e(e,i,n){setTimeout(function(){t.progress(e,i,n)})}var t=this;return this.progressedCount=0,this.hasAnyBroken=!1,this.images.length?void this.images.forEach(function(t){t.once("progress",e),t.check()}):void this.complete()},o.prototype.progress=function(e,t,i){this.progressedCount++,this.hasAnyBroken=this.hasAnyBroken||!e.isLoaded,this.emitEvent("progress",[this,e,t]),this.jqDeferred&&this.jqDeferred.notify&&this.jqDeferred.notify(this,e),this.progressedCount==this.images.length&&this.complete(),this.options.debug&&a&&a.log("progress: "+i,e,t)},o.prototype.complete=function(){var e=this.hasAnyBroken?"fail":"done";if(this.isComplete=!0,this.emitEvent(e,[this]),this.emitEvent("always",[this]),this.jqDeferred){var t=this.hasAnyBroken?"reject":"resolve";this.jqDeferred[t](this)}},r.prototype=Object.create(t.prototype),r.prototype.check=function(){var e=this.getIsImageComplete();return e?void this.confirm(0!==this.img.naturalWidth,"naturalWidth"):(this.proxyImage=new Image,this.proxyImage.addEventListener("load",this),this.proxyImage.addEventListener("error",this),this.img.addEventListener("load",this),this.img.addEventListener("error",this),void(this.proxyImage.src=this.img.src))},r.prototype.getIsImageComplete=function(){return this.img.complete&&this.img.naturalWidth},r.prototype.confirm=function(e,t){this.isLoaded=e,this.emitEvent("progress",[this,this.img,t])},r.prototype.handleEvent=function(e){var t="on"+e.type;this[t]&&this[t](e)},r.prototype.onload=function(){this.confirm(!0,"onload"),this.unbindEvents()},r.prototype.onerror=function(){this.confirm(!1,"onerror"),this.unbindEvents()},r.prototype.unbindEvents=function(){this.proxyImage.removeEventListener("load",this),this.proxyImage.removeEventListener("error",this),this.img.removeEventListener("load",this),this.img.removeEventListener("error",this)},s.prototype=Object.create(r.prototype),s.prototype.check=function(){this.img.addEventListener("load",this),this.img.addEventListener("error",this),this.img.src=this.url;var e=this.getIsImageComplete();e&&(this.confirm(0!==this.img.naturalWidth,"naturalWidth"),this.unbindEvents())},s.prototype.unbindEvents=function(){this.img.removeEventListener("load",this),this.img.removeEventListener("error",this)},s.prototype.confirm=function(e,t){this.isLoaded=e,this.emitEvent("progress",[this,this.element,t])},o.makeJQueryPlugin=function(t){t=t||e.jQuery,t&&(h=t,h.fn.imagesLoaded=function(e,t){var i=new o(this,e,t);return i.jqDeferred.promise(h(this))})},o.makeJQueryPlugin(),o});
+/* jshint ignore:end */
